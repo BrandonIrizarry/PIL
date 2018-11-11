@@ -1,0 +1,11 @@
+#!/usr/bin/env lua
+
+--[[ 
+  For now, since "." isn't in our path, we must execute this script as
+  
+  ./ex1-8
+  
+  and that's exactly what gets printed out.
+]]
+
+print(arg[0])
