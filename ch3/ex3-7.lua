@@ -5,42 +5,13 @@ end
 
 math.randomseed(os.time())
 
--- Use the Box-Muller transform, to generate a pair of normally distributed
--- samples.
+-- Use the Box-Muller transform, to generate a pair of normally distributed samples.
 function gauss ()
 	local u1, u2 = math.random(), math.random()
 	
 	return math.sqrt(-2 * math.log(u1)) * math.cos(2 * math.pi * u2),
 		math.sqrt(-2 * math.log(u1)) * math.sin(2 * math.pi * u2)
 end
-
--- Return a table of samples across a normal distribution.
--- The user can specify the number of samples, and the number
--- of decimal places to which you'd like to express each sample.
---[[
-function gauss_samples (num_samples, accuracy)
-	local samples, num_samples = {}, num_samples or 20
-	local accuracy = accuracy or 0.1
-	
-	for i = 1, num_samples do
-		local g = gauss()
-		local approx = g - g % accuracy
-		samples[#samples + 1] = approx
-	end
-	
-	return samples
-end
-]]
--- Print some samples to see what our normally distributed data looks like.
---[[
-function print_samples ()
-	local samples = gauss_samples(20, 0.125)
-	
-	-- Use the string-buffer technique on p. 132
-	samples[#samples + 1] = ""
-	print(table.concat(samples, "\n"))
-end
-]]
 
 function histogram (num_samples, accuracy, low_end, high_end)
 
