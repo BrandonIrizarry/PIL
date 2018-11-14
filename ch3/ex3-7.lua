@@ -17,6 +17,7 @@ end
 -- Return a table of samples across a normal distribution.
 -- The user can specify the number of samples, and the number
 -- of decimal places to which you'd like to express each sample.
+--[[
 function gauss_samples (num_samples, accuracy)
 	local samples, num_samples = {}, num_samples or 20
 	local accuracy = accuracy or 0.1
@@ -29,8 +30,9 @@ function gauss_samples (num_samples, accuracy)
 	
 	return samples
 end
-
+]]
 -- Print some samples to see what our normally distributed data looks like.
+--[[
 function print_samples ()
 	local samples = gauss_samples(20, 0.125)
 	
@@ -38,41 +40,56 @@ function print_samples ()
 	samples[#samples + 1] = ""
 	print(table.concat(samples, "\n"))
 end
-	
-function histogram (num_samples, accuracy)
-	local num_samples = num_samples or 20
-	local accuracy = accuracy or 0.125
-	local samples = gauss_samples(num_samples, accuracy)
-	
-	local index_to_bucket, bucket_to_frequency = {}, {}
-	
-	local low_end, high_end, index = -4, 4, 1
+]]
 
-	while low_end <= high_end do
-		index_to_bucket[index] = low_end
-		bucket_to_frequency[low_end] = 0
-		index = index + 1
-		low_end = low_end + accuracy
+function histogram (num_samples, accuracy, low_end, high_end)
+
+	-- Default arguments.
+	local num_samples = num_samples or 20000
+	local accuracy = accuracy or 1/16 -- helpful to use power-of-two denominator
+	local low_end = low_end or -4 -- lowest allowable data point
+	local high_end = high_end or 4 -- highest allowable data point
+	assert(high_end > low_end)
+	
+	-- This will contain our normally distributed data points.
+    local samples = {}
+	
+	-- Generate the data points.
+	for i = 1, num_samples do
+		local g = gauss()
+		local approx = g - g % accuracy
+		samples[#samples + 1] = approx
 	end
 	
-	-- Populate the histogram using our samples.
+	-- The table 'bucket_to_frequency' is the histogram proper.
+	-- The array 'index_to_bucket' organizes bucket-frequency pairs into entries 
+	-- that can later be displayed in sorted order.
+	local index_to_bucket, bucket_to_frequency = {}, {}
+	
+	-- Initialize the histogram itself.
+	-- 'L' is the current bucket, and 'index' is the current histogram entry.
+	do
+		local L, index  = low_end, 1
+		
+		while L <= high_end do
+			index_to_bucket[index] = L
+			bucket_to_frequency[L] = 0
+			index = index + 1
+			L = L + accuracy
+		end
+	end
+	
+	-- Populate the histogram.
+	-- Make sure that our data points are within the histogram's bounds.
 	for _, s in ipairs(samples) do
-		if s < -4 or s > 4 then goto continue end
+		if s < low_end or s > high_end then goto continue end
 		bucket_to_frequency[s] = bucket_to_frequency[s] + 1
 		::continue::
 	end
 	
-	return index_to_bucket, bucket_to_frequency
-end
-	
--- Let there be light.
-function print_histogram (num_samples, accuracy)
-	local num_samples = num_samples or 20
-	local accuracy = accuracy or 0.125
-	local i_to_b, b_to_f = histogram(num_samples, accuracy)
-	
-	for _, v in ipairs(i_to_b) do
-		local bar_length = b_to_f[v] // 10
+	-- Print the histogram to stdout.
+	for _, v in ipairs(index_to_bucket) do
+		local bar_length = bucket_to_frequency[v] // 10
 		print(v, string.rep("*" , bar_length))
 	end
 end
