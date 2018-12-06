@@ -1,0 +1,2 @@
+Elapsed time for table.concat: 0.09 seconds
+Elapsed time for slow_concat: 4.61 minutes
