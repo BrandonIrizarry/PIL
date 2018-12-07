@@ -38,7 +38,7 @@ end
 function run_tests ()
 	local message = large_list()
 
-	-- Around tenth of a second.
+	-- Around a tenth of a second.
 	local t_0 = os.clock()
 	table.concat(message)
 	print(string.format("Elapsed time for table.concat: %.2f seconds", os.clock() - t_0))
