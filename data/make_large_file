@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Write a file of size 2.4 GiB.
+dd if=/dev/zero of=large_file.txt count=1024 bs=2516582
