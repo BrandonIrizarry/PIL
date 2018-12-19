@@ -5,16 +5,11 @@
 of an existing file for its output.
 ]]
 
-function reload ()
-  package.loaded["/home/brandon/PIL/ch7/ex7-2.lua"] = nil
-  dofile("/home/brandon/PIL/ch7/ex7-2.lua")
-end
-
-m = require "ex7-1"
+local M = {}
 
 -- Handle setting the default arguments for sort_file;
 -- This time, ask for confirmation if writing over an existing file.
-function fix_streams (infile, outfile)
+function M.fix_streams (infile, outfile)
 
 	-- Set and return the necessary I/O streams.
 	if not infile then
@@ -31,7 +26,7 @@ function fix_streams (infile, outfile)
 				if io.read() == "y" then
 					goto proceed_as_normal
 				else
-					io.write("Will not overwrite anything. Using stdout", "\n")
+					io.write("Will not overwrite anything; displaying sorted output to stdout", "\n")
 					return fstream_in, io.stdout
 				end
 			end
@@ -42,3 +37,19 @@ function fix_streams (infile, outfile)
 		end
 	end
 end
+
+M.sort_file = require("ex7-1").sort_file -- use the previous definition of sort_file
+
+M.doc = [[
+
+EXERCISE 7.2 DOCUMENTATION
+
+-- Handle setting the default arguments for the file-sorting function.
+-- Ask for confirmation if writing over an existing file.
+function fix_streams (infile, outfile)
+
+-- Rewrites a text file with its lines sorted in alphabetical order.
+function sort_file (instream, outstream)
+]]
+
+return M

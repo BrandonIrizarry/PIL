@@ -18,8 +18,8 @@ function last_n_lines(filename, N)
 
 	local fstr = assert(io.open(filename, "r")) -- fails if file is empty or nonexistent.
 
-	fstr:seek("end") -- seek to the end.
-	fstr:seek("cur", -2) -- read past the nil, and final newline.
+	fstr:seek("end", -2) -- seek to the end.
+	--fstr:seek("cur", -2) -- read past the nil, and final newline.
 
 	local chars = {} -- collect the characters seen.
 
@@ -44,3 +44,11 @@ function last_n_lines(filename, N)
 	::finish::
 	return string.reverse(table.concat(chars)) -- we had been adding them backwards
 end
+
+function run_tests()
+	io.write("Enter number of lines to read back from end: ")
+	local num_lines = io.read("n")
+	print(last_n_lines("../data/big.txt", num_lines))
+end
+
+run_tests()

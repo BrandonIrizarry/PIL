@@ -18,8 +18,8 @@ end
 function last_line(filename)
 	local fstr = assert(io.open(filename, "r"))
 
-	fstr:seek("end")
-	fstr:seek("cur", -2) -- read past the nil, and final newline.
+	fstr:seek("end", -2)
+	--fstr:seek("cur", -2) -- read past the nil, and final newline.
 
 	-- Collect the characters into a table.
 	local chars = {}
@@ -40,4 +40,8 @@ function last_line(filename)
 	print(string.reverse(table.concat(chars)))
 end
 
-last_line("sample.txt")
+function run_tests()
+	last_line("../data/big.txt")
+end
+
+run_tests()
