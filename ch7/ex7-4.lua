@@ -18,11 +18,9 @@ end
 function last_line(filename)
 	local fstr = assert(io.open(filename, "r"))
 
-	fstr:seek("end", -2)
-	--fstr:seek("cur", -2) -- read past the nil, and final newline.
+	fstr:seek("end", -2) -- stop just befor the nil, and final newline.
 
-	-- Collect the characters into a table.
-	local chars = {}
+	local chars = {} -- collect the characters into a table.
 
 	-- If seeking backward returns nil plus an error, then stop.
 	repeat
