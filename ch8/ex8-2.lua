@@ -5,6 +5,12 @@
 Which one do you prefer?
 ]]
 
+--[[
+	Depending on things, I'd go with either while true, or repeat-until false,
+though the curve example for the math.huge for-loop was interesting.
+	I wouldn't rule out the others, though :)
+--]]
+
 -- Refactor each introduction into a function using 'string.format'.
 local function message(loop_type)
 	local message = [[
