@@ -5,6 +5,16 @@
 Which one do you prefer?
 ]]
 
+-- Refactor each introduction into a function using 'string.format'.
+local function message(loop_type)
+	local message = [[
+	Inside %s;
+	Type any character (then Enter), or else q+Enter to exit:
+]]
+
+	print(string.format(message, loop_type))
+end
+
 assert(io.input() == io.stdin)
 io.write(
 	[[
@@ -21,10 +31,8 @@ assert(math.type(selection) == "integer" and
 	selection <= 5)
 
 function math_huge()
-	io.write([[
-	Inside 'math.huge' for-loop;
-	Type any character, or else 'q' to exit:
-]])
+	message("'math.huge' for-loop")
+
 	for i = 1, math.huge do
 		local char = io.read(1)
 		if char == "q" then break end
@@ -32,10 +40,8 @@ function math_huge()
 end
 
 function while_true()
-	io.write([[
-	Inside 'while true' loop;
-	Type any character, or else 'q' to exit:
-]])
+	message("'while true' loop")
+
 	while true do
 		local char = io.read(1)
 		if char == "q" then break end
@@ -43,10 +49,7 @@ function while_true()
 end
 
 function infinite_tail_recursion()
-	io.write([[
-	Inside an infinite tail recursion;
-	Type any character, or else 'q' to exit:
-]])
+	message("infinite tail recursion")
 
 	local function engine()
 		local char = io.read(1)
@@ -59,10 +62,8 @@ function infinite_tail_recursion()
 end
 
 function cyclic_goto()
-	io.write([[
-	Inside a cyclic goto;
-	Type any character, or else 'q' to exit:
-]])
+	message("cyclic goto")
+
 	::cycle:: local char = io.read(1)
 
 	if char == "q" then
@@ -75,10 +76,8 @@ function cyclic_goto()
 end
 
 function repeat_until_false()
-	io.write([[
-		Inside a repeat-until false loop;
-		Type any character, or else 'q' to exit:
-]])
+	message("repeat-until false")
+
 	repeat
 		local char = io.read(1)
 
