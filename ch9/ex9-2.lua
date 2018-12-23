@@ -45,3 +45,16 @@ end
 
 c = G(1); c.double(); c.double(); c.double(); c.decrement(); c.add(0.5)
 assert(c.get() == 7.5)
+
+-- Even this works:
+function H (x)
+	local set = function (y) x = y end
+	local get = function () return x end
+	return set, get
+end
+
+a,b = H(4)
+assert(b() == 4)
+a(12)
+assert(b() == 12)
+
