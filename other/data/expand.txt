@@ -1,0 +1,21 @@
+A	qt	!
+so	hi
+I	wanna c
+ry!
+
+ num chars: 7
+ num chars: 13
+ num chars: 23
+ num chars: 27
+
+
+A   qt  !
+so  hi
+I   wanna c
+ry!
+
+
+A   qt  !
+so  hi
+I   wanna c
+ry!

@@ -1,0 +1,13 @@
+Time to generate result: 0.000130 seconds (0.000002 minutes)
+
+	
+		
+			A Simple HTML Document
+		
+	
+
+	
+		This is a very simple HTML document
+		It only has two paragraphs
+	
+
