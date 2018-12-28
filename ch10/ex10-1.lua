@@ -7,49 +7,69 @@ the delimiter:
 
 	t = split("a whole new world", " ")
 	-- t = {"a", "whole", "new", "world"}
+
+	How does your function handle empty strings? (In particular, is an empty string
+an empty sequence or a sequence with one empty string?)
 ]]
 
--- OK - if patterns must not be literal, then we can't just tag them
--- onto the end - we would have to figure out an instance of the pattern,
--- and tag that onto the end.
--- For me, the best solution would be to legitimately find the
--- last occurence of the pattern, and take the substring towards the
--- end as the last token
-function split (str, pattern, literal)
-	str = str .. pattern
-	if literal == nil then literal = true end
+--[[
+	Our function processes an empty string into an empty sequence.
+This is because tokens are added to the table only when gsub finds a match.
+]]
 
-	if literal then
-		pattern = pattern:gsub("(%W)", "%%%1") -- prepare 'pattern' for use as a literal pattern
+function split (str, pat, lit)
+
+	-- Escape magic characters if 'lit' is 'true'
+	if lit then
+		pat = pat:gsub("%W", "%%%0") -- see p. 102
 	end
 
-	local T = {}
+	local blocks = {}
+	local last = 1 -- default value (sole token is 'str' itself)
 
-	for token in str:gmatch("(.-)" .. pattern) do
-		if token ~= "" then
-			T[#T + 1] = token
+	str:gsub("(.-)"..pat.."()", function (block, index)
+		if #block > 0 then -- reject "" (e.g. pat begins string, or pat is "")
+			blocks[#blocks + 1] = block
 		end
+		last = index -- aim to collect the index of the last block
+	end)
+
+	if last <= #str -- guard against 'sub' returning ""
+		then blocks[#blocks + 1] = str:sub(last)
 	end
 
-	return T
+	return blocks
 end
 
-function make_string(pattern, ...)
-	return table.concat({...}, pattern)
-end
 
-function print_array (a)
-	for _, v in ipairs(a) do
-		print(v)
+function test ()
+	local cases =
+		{
+			{"hello+++goodbye",				"+++", 		true},
+			{"hello", 						".", 		true},
+			{"+++hello+++",					"+++", 		true},
+			{"", 							"h", 			},
+			{"househouse", 					"o",			},
+			{"househouse", 					"z",			},
+			{"these are words", 			" ",			},
+			{"pan123_can456", 				"%W",			},
+			{"867-5309", 					"-",			},
+			{".This;is.some thing!new?", 	"[;.!? ]",		},
+			{"Holland",						"",				}
+		}
+
+	for _, c in ipairs(cases) do
+		local str, pat, lit = c[1], c[2], c[3]
+		local blocks = split(str, pat, lit)
+		io.write(string.format('string: "%s"\npattern: "%s", %s\ntokens: ', str, pat, tostring(lit or false))
+		)
+		for _, block in ipairs(blocks) do
+			io.write(block, " ")
+		end
+		io.write("\n\n")
 	end
 end
 
-pattern = "[=abc=]"
-r = make_string(pattern, "blue", "green", "red")
-t = split(r, pattern)
-print_array(t)
+test()
 
-pattern = "[;:. ]"
-r = "This;is:something.new !"
-t = split(r, pattern, false)
-print_array(t)
+
