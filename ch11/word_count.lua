@@ -24,7 +24,7 @@ table.sort(words, function (w1, w2)
 end)
 
 -- number of words to print
-local n = math.min(tonumber(arg[1]) or math.huge, #words) -- clever :)
+local n = math.min(tonumber(arg[1]) or math.huge, #words)
 
 for i = 1, n do
 	io.write(words[i], "\t", counter[words[i]], "\n")
