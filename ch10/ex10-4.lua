@@ -27,10 +27,13 @@ end
 spaces_100KB = string.rep(" ", 100 * 2^10) -- 100 KB of spaces
 spaces_50KB = string.rep(" ", 50 * 2^10) -- 50 KB of spaces
 
+-- Usage: In an interactive Lua, trim(tests[1]), trim(tests[2]), etc.
 tests = {
 			"a" .. spaces_100KB .. "a", -- 2 1/2 mins
 			"a" .. spaces_50KB .. "a" .. spaces_50KB .. "a", -- 1.3 mins
+			spaces_100KB .. "a" .. spaces_100KB .. "a" .. spaces_100KB, -- 2.82 mins
 		}
+
 
 --[[
 	It looks like 'trim' has trouble finding its middle block. It matches the
@@ -46,11 +49,10 @@ including that last set of "foil" characters, and finishes by matching whatever 
 there are at the end.
 ]]
 
--- Doesn't trim something like "  a     a  ". tbc, fix.
--- May need something a little more involved than just a one-liner w/ pattern. :)
-function trim_fast (s)
-	s = string.gsub(s, "^%s*(%S*)%s*$", "%1")
-	return s
-end
 
-run_benchmark(tests[1], trim_fast)
+function trim_fast (s)
+	s = string.gsub(s, "^%s*(.*)$", "%1")
+	s = string.reverse(s)
+	s = string.gsub(s, "^%s*(.*)$", "%1")
+	return string.reverse(s)
+end
