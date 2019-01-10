@@ -10,44 +10,71 @@ function reload ()
 end
 
 
-function count_modshift (x)
-	local count = 0
+local ways = {
+	function ()
+		local xs = string.pack("j", 1) -- pack x as a Lua integer.
 
-	while x ~= 0 do
-		count = count + (x % 2)
-		x = x >> 1
-	end
+		return #xs * 8 -- #xs = num bytes, * 8 = num bits.
+	end,
 
-	return count
+	function ()
+		for i = 1, math.huge do
+			local measurer = 1
+			if measurer << i == 0 then -- have 1 "run off the screen"
+				return i
+			end
+		end
+	end,
+
+	function ()
+		local neg_1_str = string.format("%x", -1) -- get ff..ffff.
+		return #neg_1_str * 4
+	end,
+
+	function ()
+		for i = 1, math.huge do
+			local measurer = math.mininteger
+			if measurer >> i == 0 then -- run, but from left to right.
+				return i
+			end
+		end
+	end,
+
+	function ()
+		local pos_size = math.log(math.maxinteger, 2)
+		return math.tointeger(pos_size) + 1 -- use log to compute num digits.
+	end,
+
+	function ()
+		local heap = -1 -- all ones.
+		local sum = 0
+
+		while heap ~= 0 do
+			sum = sum + (heap & 1) -- add current parity digit to sum
+			heap = heap >> 1
+		end
+
+		return sum
+	end,
+}
+
+print(string.format("You currently have %d functions.", #ways))
+
+-- First test: test against a known size of 64
+for _, way in ipairs(ways) do
+
+	local NUM_BITS = way()
+
+	assert(NUM_BITS == 64) -- we know a Lua int is 64 bits wide here.
 end
 
+-- Second test: See if all functions agree on one value.
+local agreement = ways[1]() == ways[2]()
 
-function count_gmatch (x)
-	local count =  0
-	local repr = string.format("%x", x)
-
-	local key = {
-		["0"] = 0, -- 0000
-		["1"] = 1, -- 0001
-		["2"] = 1, -- 0010
-		["3"] = 2, -- 0011
-		["4"] = 1, -- 0100
-		["5"] = 2, -- 0101
-		["6"] = 2, -- 0110
-		["7"] = 3, -- 0111
-		["8"] = 1, -- 1000
-		["9"] = 2, -- 1001
-		["a"] = 2, -- 1010
-		["b"] = 3, -- 1011
-		["c"] = 2, -- 1100
-		["d"] = 3, -- 1101
-		["e"] = 3, -- 1110
-		["f"] = 4, -- 1111
-	}
-
-	for hex in repr:gmatch("%x") do -- match each hex digit
-		count = count + key[hex]
-	end
-
-	return count
+for i = 2, #ways - 1 do
+	agreement = agreement and ways[i]() == ways[i + 1]()
 end
+
+assert(agreement)
+
+print(string.format("Looks like all %d functions pass, congratulations.", #ways))
