@@ -1,98 +1,93 @@
+function fmt_write(fmt, ...)
+	return io.write(string.format(fmt, ...))
+end
 
+local RECORD_ENTRY = ",?([^,]*)"
+local M = {}
+local revM = {}
 
-local patterns = {
+local test_file = "testfile.csv"
+local real_file = "numbers_win4_since_1980.csv"
+
+csv_fstream = io.open(real_file)
+
+function listify_record (rtext)
+	local list = {}
 	
-	RECORD_KEY = "^(.-),",
-	RECORD_VALUE = ",([^,]*)",
-	RECORD_ENTRY = ",?([^,]*)"
-}
-
-local examples = {
-	"08/05/2018,232,7,214,7,3156,15,3085,16,  ,  ,05,05",
-	"01/05/2019,917,,891,,6285,,6772,,  ,  ,  ,"
-}
-
-local example = examples[1]
-
-local header = "Draw Date,Midday Daily #,Midday Daily Sum,Evening Daily #,Evening Daily Sum,Midday Win 4 #,Midday Win 4 Sum,Evening Win 4 #,Evening Win 4 Sum,Midday Daily Booster,Evening Daily Booster,Midday Win 4 Booster,Evening Win 4 Booster"
-
-for _, ex in ipairs(examples) do
-	local count = 0
-	
-	for entry in ex:gmatch(patterns.RECORD_ENTRY) do
-		count = count + 1
+	for entry in rtext:gmatch(RECORD_ENTRY) do
+		if entry:match("^%s*$") then
+			entry = false
+		end
+		
+		list[#list + 1] = entry
 	end
 	
-	print(count)
+	return list
 end
 
--- Converts the text of a CSV record into a Lua sequence;
--- listified record, or lrecord.
-function listify_record (record)
-	local entries = {}
+header = listify_record(csv_fstream:read()) -- read the first line, with all the headers, and listify it.
+
+-- M is used to look up by index, and revM, by string-query.
+for _, category in ipairs(header) do
+	M[category] = {}
+	revM[category] = {}
+end
+
+local index = 1
+for line in csv_fstream:lines() do	
+	local record = listify_record(line)
 	
-	for e in record:gmatch(patterns.RECORD_ENTRY) do
-		entries[#entries + 1] = e
+	for i, entry in ipairs(record) do
+		local category = header[i]
+	
+		M[category][index] = entry
+		revM[category][entry] = index
 	end
 	
-	return entries
+	index = index + 1
 end
 
--- Convert an lrecord into a dict which can be easily inserted into a parent category.
---[[
-function zip_with_header (lr)
-	local dict = {}
-	local H = listify_record(header)
-	
-	dict[1] = lr[1]
-	
-	for i = 2, #H do
-		local h = H[i] -- the current header (what the ipairs "value" would've been)
-		dict[h] = lr[i]
-	end
-	
-	return dict
-end
---]]
 
--- We want this version of the zipper function.  
--- However, we'll also need a way to iterate through a
--- dict in an order defined by another sequence (listify_record(header)!),
--- I need an iterator for zrecords. tbc, next time. 
-
-function zip_with_header (lr)
-	local dict = {}
-	local H = listify_record(header)
-	
-	for i, h in ipairs(H) do
-		dict[h] = lr[i]
-	end
-	
-	return dict
-end
---[[
-function add_to_parent(zr, P)
-	local H = listify_record(header)
-
-	
-end
---]]
-
-local L1 = listify_record(examples[1])
-local L2 = listify_record(examples[2])
-
-function print_lrecord (lr)
-	for i, h in ipairs(lr) do
-		print(i, h)
+function print_M ()
+	for category, listing in pairs(M) do
+		fmt_write("%s %s %d\n", category, type(listing), #listing)
+		
+		for _, entry in ipairs(listing) do
+			io.write(tostring(entry), " ")
+		end
+		
+		io.write("\n")
 	end
 end
 
-function print_zrecord (zr)	
-	for key, value in pairs(zr) do
-		print(key, value)
+function print_revM ()
+	for category, rev_listing in pairs(revM) do
+		fmt_write("%s\n", category)
+		
+		for entry, i in pairs(rev_listing) do
+			fmt_write("%s=%d ", tostring(entry), i)
+		end
+		
+		io.write("\n")
 	end
 end
 
-Z1 = zip_with_header(L1)
-print_zrecord(Z1)
+function query_date (date_str)
+	local index = revM["Draw Date"][date_str]
+	print(index)
+	
+	for category, listing in pairs(M) do
+		fmt_write("%s=%s\n", category, listing[index])
+	end
+end
 
+function query_result (category, your_result)
+	local index = revM[category][your_result]
+	
+	print(M["Draw Date"][index])
+end
+
+query_date("01/19/2019")
+query_result("Midday Daily #", "119") -- for the real file, it looks like overwriting takes place.
+query_result("Midday Daily #", "213") -- we need to make sure we're getting the most recent one first,
+-- or else keep a list of all dates where this particular number came out. tbc.
