@@ -51,6 +51,31 @@ end
 
 L = listNew()
 
+printList(L)
+
+pushFirst(L, "a")
+pushFirst(L, "b")
+pushFirst(L, "c")
+
+printList(L)
+
+pushLast(L, "d")
+pushLast(L, "e")
+pushLast(L, "f")
+
+printList(L)
+
+popFirst(L)
+popFirst(L)
+popLast(L)
+popLast(L)
+popLast(L)
+
+printList(L)
+popLast(L)
+
+printList(L)
+--[[
 pushLast(L, "A")
 pushLast(L, "B")
 pushLast(L, "C")
@@ -65,3 +90,4 @@ popLast(L)
 printList(L)
 popFirst(L)
 printList(L)
+--]]
