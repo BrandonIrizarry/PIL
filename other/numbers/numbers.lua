@@ -3,8 +3,8 @@ function fmt_write(fmt, ...)
 end
 
 local RECORD_ENTRY = ",?([^,]*)"
-local M = {}
-local revM = {}
+M = {}
+revM = {}
 
 local test_file = "testfile.csv"
 local real_file = "numbers_win4_since_1980.csv"
@@ -41,7 +41,17 @@ for line in csv_fstream:lines() do
 		local category = header[i]
 	
 		M[category][index] = entry
-		revM[category][entry] = index
+		
+		local occurences = revM[category][entry] -- alias for a bit.
+		
+		if not occurences then occurences = {} end
+		
+		table.insert(occurences, index)
+	
+	
+		--print(category, occurences)
+		
+		revM[category][entry] = occurences -- hook it back up.
 	end
 	
 	index = index + 1
@@ -64,30 +74,44 @@ function print_revM ()
 	for category, rev_listing in pairs(revM) do
 		fmt_write("%s\n", category)
 		
-		for entry, i in pairs(rev_listing) do
-			fmt_write("%s=%d ", tostring(entry), i)
+		for entry, index_list in pairs(rev_listing) do
+			fmt_write("%s=", tostring(entry))
+			
+			for _, index in ipairs(index_list) do
+				fmt_write(" %d", index)
+			end
+			
+			io.write("\n")
 		end
 		
 		io.write("\n")
 	end
 end
 
-function query_date (date_str)
-	local index = revM["Draw Date"][date_str]
-	print(index)
+-- e.g on what dates did 444 come out in Midday?
+function query_date (result_name, result)
+	local indices = revM[result_name][result]
 	
-	for category, listing in pairs(M) do
-		fmt_write("%s=%s\n", category, listing[index])
+	fmt_write("%s: %s came out on the following date(s):\n", result_name, result)
+	for _, index in ipairs(indices) do
+		print(M["Draw Date"][index])
 	end
 end
 
-function query_result (category, your_result)
-	local index = revM[category][your_result]
+query_date("Midday Daily #", "444")
+--[[
+Midday Daily #: 444 came out on the following date(s):
+09/20/2017
+11/27/2012
+06/15/2006
+02/11/2005
+]]
+
+-- e.g. what was the midday result on 01/01/2019?
+function query_result (result_name, date_str)
+	local index = revM["Draw Date"][date_str][1] -- The "Draw Date" field is the column of keys, so this suffices.
 	
-	print(M["Draw Date"][index])
+	fmt_write("The %s on %s was: %s\n", result_name, date_str, M[result_name][index])
 end
 
-query_date("01/19/2019")
-query_result("Midday Daily #", "119") -- for the real file, it looks like overwriting takes place.
-query_result("Midday Daily #", "213") -- we need to make sure we're getting the most recent one first,
--- or else keep a list of all dates where this particular number came out. tbc.
+query_result ("Midday Daily #", "01/01/2019") --> 473
