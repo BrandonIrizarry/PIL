@@ -26,67 +26,74 @@ end
 
 local VALID_IDENTIFIER = "^[_%a][_%w]*$"
 
+function serialize(obj)
 
-function fmt_write (fmt, ...)
-	return io.write(string.format(fmt, ...))
-end
+	local components = {}
 
-function serialize (obj, depth)
-	
-	depth = depth or 0 
-	
-	local type_obj = type(obj)
-	
-	if type_obj == "number" or
-		type_obj == "string" or
-		type_obj == "boolean" or
-		type_obj == "nil" then
-	
-		fmt_write("%q", obj)
-	elseif type_obj == "table" then
-	
-		-- Calculate the proper indentation for this table's elements.
-		local self_tabs = string.rep("\t", depth)
-		local el_tabs = string.rep("\t", depth + 1)
-		
-		fmt_write("\n%s{\n", self_tabs)
-		
-		-- Print the sequence portion first, then record the sequence
-		-- indices so that we can skip them when iterating across the
-		-- rest of the table.
-		local index_taken  = {} 
-		
-		fmt_write("%s", el_tabs)
-		for i, s_item in ipairs(obj) do
-			serialize(s_item)
-			fmt_write(",")
-			index_taken[i] = true
-		end
-		fmt_write("\n")
-		
-		
-		-- Write out the rest (non-sequential) part of the table.
-		for k,v in pairs(obj) do
-			local table_nl = type(v) == "table" and "\n" or ""
-			
-			if not index_taken[k] then
-				if type(k) == "string" and k:match(VALID_IDENTIFIER) then
-					fmt_write("%s%s = ", el_tabs, k)
-				else
-					fmt_write("%s[", el_tabs)
-					serialize(k)
-					fmt_write("] = ")
-				end
-				
-				serialize(v, depth + 1)
-				fmt_write(",\n%s", table_nl)
-			end
-		end
-		
-		fmt_write("%s}", self_tabs)
-	else
-		error("cannot serialize a " .. type_obj)
+	local function fmt_add (fmt, ...)
+		components[#components + 1] = string.format(fmt, ...)
 	end
+	
+	function serialize1 (obj, depth)
+		
+		depth = depth or 0
+		
+		local type_obj = type(obj)
+		
+		if type_obj == "number" or
+			type_obj == "string" or
+			type_obj == "boolean" or
+			type_obj == "nil" then
+		
+			fmt_add("%q", obj)
+		elseif type_obj == "table" then
+		
+			-- Calculate the proper indentation for this table's elements.
+			local self_tabs = string.rep("\t", depth)
+			local el_tabs = string.rep("\t", depth + 1)
+			
+			fmt_add("\n%s{\n", self_tabs)
+			
+			-- Print the sequence portion first, then record the sequence
+			-- indices so that we can skip them when iterating across the
+			-- rest of the table.
+			local index_taken  = {} 
+			
+			fmt_add("%s", el_tabs)
+			for i, s_item in ipairs(obj) do
+				serialize1(s_item)
+				fmt_add(",")
+				index_taken[i] = true
+			end
+			fmt_add("\n")
+			
+			
+			-- Write out the rest (non-sequential) part of the table.
+			for k,v in pairs(obj) do
+				
+				if not index_taken[k] then
+					if type(k) == "string" and k:match(VALID_IDENTIFIER) then
+						fmt_add("%s%s = ", el_tabs, k)
+					else
+						fmt_add("%s[", el_tabs)
+						serialize1(k)
+						fmt_add("] = ")
+					end
+					
+					serialize1(v, depth + 1)
+					fmt_add(",\n%s",  type(v) == "table" and "\n" or "")
+				end
+			end
+			
+			fmt_add("%s}", self_tabs)
+		else
+			error("cannot serialize a " .. type_obj)
+		end
+	end
+	
+	serialize1(obj)
+	
+	return table.concat(components)
 end
 
 examples = {
@@ -166,20 +173,9 @@ function equal (o1, o2)
 end
 
 -- See if what we serialize is deep-equal to the original.
-function run (fstream)
+function test_equality ()
 
 	for _, t in ipairs(examples) do
-		local fstream = assert(io.tmpfile())
-		io.output(fstream)
-		serialize(t) 
-		
-		-- Check that our tables look good when stdout is the outstream
-		local option = (io.output() ~= io.stdout) and "q" or io.read()
-		if option ~= "q" then os.execute("clear") end
-	
-		fstream:seek("set")
-		local back_table = load("return " .. fstream:read("a"))()
-		
-		print(equal(back_table, t))
+		print(equal(t, load("return " .. serialize(t))())) 
 	end
 end
