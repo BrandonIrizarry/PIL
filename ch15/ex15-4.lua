@@ -18,8 +18,10 @@ end
 --[[
 	obj: The Lua datatype we're serializing (stringifying) with this function.
 	depth: The nesting depth of 'obj'.
-	outstream: specify an optional outstream to write data to.
 	
+	This function writes the stringification of 'obj' to whatever the current
+output stream is, but in the next exercise this function will merely build 
+the string output in memory.
 	
 	Returns nil.
 ]]
