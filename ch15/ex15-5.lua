@@ -28,8 +28,6 @@ local VALID_IDENTIFIER = "^[_%a][_%w]*$"
 
 function serialize (obj, depth)
 	
-	depth = depth or 0
-	
 	local type_obj = type(obj)
 	
 	if type_obj == "number" or
@@ -55,7 +53,7 @@ function serialize (obj, depth)
 		
 		table.insert(result, string.format("%s", el_tabs))
 		for i, s_item in ipairs(obj) do
-			local sub_result = serialize(s_item)
+			local sub_result = serialize(s_item, 0)
 			table.insert(result, string.format("%s,", sub_result))
 			index_taken[i] = true
 		end
@@ -72,7 +70,7 @@ function serialize (obj, depth)
 				if type(k) == "string" and k:match(VALID_IDENTIFIER) then
 					table.insert(result, string.format("%s%s = %s", el_tabs, k, sub_result))
 				else
-					table.insert(result, string.format("%s[%s] = %s", el_tabs, serialize(k), sub_result))
+					table.insert(result, string.format("%s[%s] = %s", el_tabs, serialize(k, 0), sub_result))
 				end
 				
 				table.insert(result, string.format(",\n%s",  type(v) == "table" and "\n" or ""))
