@@ -14,6 +14,24 @@ function reload ()
 	dofile("/home/brandon/PIL/ch15/ex15-5.lua")
 end
 
+function new_buffer ()
+	local result = {}
+	
+	return {
+		add =
+		function (fmt, ...)
+			result[#result + 1] = string.format(fmt, ...)
+		end,
+		
+		flush =
+		function ()
+			local str = table.concat(result)
+			result = {}
+			return str
+		end,
+	}
+end
+		
 
 --[[
 	obj: The Lua datatype we're serializing (stringifying) with this function.
@@ -23,6 +41,7 @@ end
 ]]
 
 local VALID_IDENTIFIER = "^[_%a][_%w]*$"
+
 
 function serialize (obj, depth)
 	
@@ -35,29 +54,28 @@ function serialize (obj, depth)
 	
 		return string.format("%q", obj)
 	elseif type_obj == "table" then
-	
-		local result = {} -- string buffer
+		local buffer = new_buffer()
 		
 		-- Calculate the proper indentation for this table's elements.
 		local self_tabs = string.rep("\t", depth)
 		local el_tabs = string.rep("\t", depth + 1)
 		
-		table.insert(result, string.format("\n%s{\n", self_tabs))
+		buffer.add("\n%s{\n", self_tabs)
 		
 		-- Print the sequence portion first, then record the sequence
 		-- indices so that we can skip them when iterating across the
 		-- rest of the table.
 		local index_taken  = {} 
 		
-		table.insert(result, string.format("%s", el_tabs))
+		buffer.add("%s", el_tabs)
+		
 		for i, s_item in ipairs(obj) do
 			local sub_result = serialize(s_item, 0)
-			table.insert(result, string.format("%s,", sub_result))
+			buffer.add("%s,", sub_result)
 			index_taken[i] = true
 		end
 		
-		table.insert(result, "\n")
-		
+		buffer.add("\n")
 		
 		-- Write out the rest (non-sequential) part of the table.
 		for k,v in pairs(obj) do
@@ -66,18 +84,19 @@ function serialize (obj, depth)
 				local sub_result = serialize(v, depth + 1)
 				
 				if type(k) == "string" and k:match(VALID_IDENTIFIER) then
-					table.insert(result, string.format("%s%s = %s", el_tabs, k, sub_result))
+					buffer.add("%s%s = %s", el_tabs, k, sub_result)
 				else
-					table.insert(result, string.format("%s[%s] = %s", el_tabs, serialize(k, 0), sub_result))
+					buffer.add("%s[%s] = %s", el_tabs, serialize(k, 0), sub_result)
 				end
 				
-				table.insert(result, string.format(",\n%s",  type(v) == "table" and "\n" or ""))
+				buffer.add(",\n%s", type(v) == "table" and "\n" or "")
 			end
 		end
 		
-		table.insert(result, string.format("%s}", self_tabs))
+		buffer.add("%s}", self_tabs)
 		
-		return table.concat(result)
+		--return table.concat(result)
+		return buffer.flush()
 	else
 		error("cannot serialize a " .. type_obj)
 	end
