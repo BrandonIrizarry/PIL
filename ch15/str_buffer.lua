@@ -1,7 +1,7 @@
 
 local M = {}
 
-function M.buffer ()
+function M.Buffer ()
 	local result = {}
 	
 	return {

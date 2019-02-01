@@ -23,7 +23,7 @@ end
 
 local VALID_IDENTIFIER = "^[_%a][_%w]*$"
 
-local buffer = require("str_buffer").buffer
+local Buffer = require("str_buffer").Buffer
 
 function serialize (obj, depth)
 	
@@ -36,7 +36,7 @@ function serialize (obj, depth)
 	
 		return string.format("%q", obj)
 	elseif type_obj == "table" then
-		local buffer = buffer()
+		local buffer = Buffer()
 		
 		-- Calculate the proper indentation for this table's elements.
 		local self_tabs = string.rep("\t", depth)
