@@ -25,7 +25,20 @@ local VALID_IDENTIFIER = "^[_%a][_%w]*$"
 
 local Buffer = require("str_buffer").Buffer
 
-function serialize (obj, depth)
+function basic_serialize (obj)
+
+	assert(
+		(type(obj) == "number" or
+		type(obj) == "string" or
+		type(obj) == "boolean" or
+		type(obj) == "nil"),
+		"Are you trying to serialize a complicated key? ;)"
+	)
+	
+	return string.format("%q", obj)
+end
+
+function serialize (obj, path, depth)
 	
 	local type_obj = type(obj)
 	
@@ -34,7 +47,8 @@ function serialize (obj, depth)
 		type_obj == "boolean" or
 		type_obj == "nil" then
 	
-		return string.format("%q", obj)
+		return basic_serialize(obj)
+		
 	elseif type_obj == "table" then
 		local buffer = Buffer()
 		
@@ -52,8 +66,8 @@ function serialize (obj, depth)
 		buffer.add("%s", el_tabs)
 		
 		for i, seq_item in ipairs(obj) do
-			local sub_result = serialize(seq_item, 0)
-			buffer.add("%s,", sub_result)
+			local sub_path = string.format("%s[%d]", path, i)
+			buffer.add("%s,", serialize(seq_item, sub_path, 0))
 			index_taken[i] = true
 		end
 		
@@ -63,12 +77,14 @@ function serialize (obj, depth)
 		for k,v in pairs(obj) do
 			
 			if not index_taken[k] then
-				local sub_result = serialize(v, depth + 1)
-				
+		
 				if type(k) == "string" and k:match(VALID_IDENTIFIER) then
-					buffer.add("%s%s = %s", el_tabs, k, sub_result)
+					local sub_path = string.format("%s.%s", path, k)
+					buffer.add("%s%s = %s", el_tabs, k, serialize(v, sub_path, depth + 1))
 				else
-					buffer.add("%s[%s] = %s", el_tabs, serialize(k, 0), sub_result)
+					local bs_k = basic_serialize(k)
+					local sub_path = string.format("%s[%s]", path, bs_k)
+					buffer.add("%s[%s] = %s", el_tabs, bs_k, serialize(v, sub_path, depth + 1))
 				end
 				
 				buffer.add(",\n%s", type(v) == "table" and "\n" or "")
@@ -164,7 +180,8 @@ end
 -- See if what we serialize is deep-equal to the original.
 function test_equality ()
 
-	for _, t in ipairs(examples) do
-		print(equal(t, load("return " .. serialize(t, 0))())) 
+	for i, t in ipairs(examples) do
+		local initial_path = string.format("examples[%d]", i)
+		print(equal(t, load("return " .. serialize(t, initial_path, 0))())) 
 	end
 end
