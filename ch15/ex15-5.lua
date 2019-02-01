@@ -51,8 +51,8 @@ function serialize (obj, depth)
 		
 		buffer.add("%s", el_tabs)
 		
-		for i, s_item in ipairs(obj) do
-			local sub_result = serialize(s_item, 0)
+		for i, seq_item in ipairs(obj) do
+			local sub_result = serialize(seq_item, 0)
 			buffer.add("%s,", sub_result)
 			index_taken[i] = true
 		end
