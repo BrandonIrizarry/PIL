@@ -14,25 +14,6 @@ function reload ()
 	dofile("/home/brandon/PIL/ch15/ex15-5.lua")
 end
 
-function new_buffer ()
-	local result = {}
-	
-	return {
-		add =
-		function (fmt, ...)
-			result[#result + 1] = string.format(fmt, ...)
-		end,
-		
-		flush =
-		function ()
-			local str = table.concat(result)
-			result = {}
-			return str
-		end,
-	}
-end
-		
-
 --[[
 	obj: The Lua datatype we're serializing (stringifying) with this function.
 	depth: The nesting depth of 'obj'.
@@ -42,6 +23,7 @@ end
 
 local VALID_IDENTIFIER = "^[_%a][_%w]*$"
 
+local buffer = require("str_buffer").buffer
 
 function serialize (obj, depth)
 	
@@ -54,7 +36,7 @@ function serialize (obj, depth)
 	
 		return string.format("%q", obj)
 	elseif type_obj == "table" then
-		local buffer = new_buffer()
+		local buffer = buffer()
 		
 		-- Calculate the proper indentation for this table's elements.
 		local self_tabs = string.rep("\t", depth)

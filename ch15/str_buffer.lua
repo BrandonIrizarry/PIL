@@ -1,17 +1,22 @@
 
 local M = {}
 
-
-local buffer = {}
-
-function M.add (fmt, ...)
-	buffer[#buffer + 1] = string.format(fmt, ...)
-end
-
-function M.flush ()
-	local str = table.concat(buffer)
-	buffer = {}
-	return str
+function M.buffer ()
+	local result = {}
+	
+	return {
+		add =
+		function (fmt, ...)
+			result[#result + 1] = string.format(fmt, ...)
+		end,
+		
+		flush =
+		function ()
+			local str = table.concat(result)
+			result = {}
+			return str
+		end,
+	}
 end
 
 return M
