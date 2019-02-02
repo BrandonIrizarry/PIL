@@ -21,10 +21,11 @@ end
 
 Buffer = require("str_buffer").Buffer
 
-buffer = Buffer()
+local buffer = Buffer()
 
 function save (name, value, saved)
 	saved = saved or {} -- initial value
+	
 	
 	buffer.add("%s = ", name)
 	
@@ -34,6 +35,7 @@ function save (name, value, saved)
 		type(value) == "nil" then
 		
 		buffer.add("%s\n", basicSerialize(value))
+		
 	elseif type(value) == "table" then
 		if saved[value] then -- value already saved?
 			buffer.add("%s\n", saved[value]) -- use its previous name
@@ -51,7 +53,6 @@ function save (name, value, saved)
 		error("cannot save a " .. type(value))
 	end
 end	
-
 
 
 -- All arrays should be named "a".
@@ -76,7 +77,21 @@ local examples = {
 
 
 save("a", examples[1]())
-print(buffer.flush())
+local derivation = buffer.flush()
+
+local 
+for line in derivation:gmatch(".-\n") do
+	local stack, value = line:match("^(.-)%s*=%s*(.-)\n$")
+	local _, stack_depth = stack:gsub("%[.-]", "%0")
+	local tabs = string.rep("\t", stack_depth)
+	
+	if value == "{}" then
+		io.write(tabs, "{\n")
+	else
+		io.write(tabs, value, "\n")
+	end
+
+end
 
 --[[
 for k,v in pairs(assignments) do
