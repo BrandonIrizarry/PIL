@@ -93,13 +93,21 @@ function serialize (obj, path, depth)
 		
 		buffer.add("%s}", self_tabs)
 		
-		--return table.concat(result)
 		return buffer.flush()
 	else
 		error("cannot serialize a " .. type_obj)
 	end
-	
 end
+
+--[[
+function sr_table ()
+	local a = {x=1, y=2, {3,4,5}}
+	a[2] = a -- cycle
+	a.z = a[1] -- shared subtable
+	
+	return a
+end
+--]]
 
 examples = {
 
@@ -153,6 +161,10 @@ examples = {
 	
 	-- t[1] == 3, the first "[1]" isn't a part of the table.
 	{[1] = 1, [2] = 2, 3},
+	
+	{ {3,4,5}, {5,6, {7,8,9}}},
+	
+	--sr_table(),
 }
 
 function equal (o1, o2)
