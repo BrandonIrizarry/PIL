@@ -52,7 +52,7 @@ function serialize (obj, depth)
 		local self_tabs = string.rep("\t", depth)
 		local el_tabs = string.rep("\t", depth + 1)
 		
-		fmt_write("\n%s{\n", self_tabs)
+		fmt_write("\n\n%s{\n", self_tabs)
 		
 		-- Print the sequence portion first, then record the sequence
 		-- indices so that we can skip them when iterating across the
@@ -61,7 +61,7 @@ function serialize (obj, depth)
 		
 		fmt_write("%s", el_tabs)
 		for i, s_item in ipairs(obj) do
-			serialize(s_item)
+			serialize(s_item, depth + 1)
 			fmt_write(",")
 			index_taken[i] = true
 		end
@@ -144,6 +144,8 @@ examples = {
 	
 	-- t[1] == 3, the first "[1]" isn't a part of the table.
 	{[1] = 1, [2] = 2, 3},
+	
+	{ {1,2,3}, {4,5,6}, {7,8,9} },
 }
 
 function equal (o1, o2)
@@ -185,4 +187,8 @@ function run ()
 		
 		print(equal(back_table, t))
 	end
+end
+
+function test1 ()
+	serialize({{1,2,3}, {4,5,6}, {7,8,9}}, 0)
 end

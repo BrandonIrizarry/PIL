@@ -14,94 +14,92 @@ function reload ()
 	dofile("/home/brandon/PIL/ch15/ex15-5.lua")
 end
 
-function basicSerialize (o)
-	-- assume 'o' is a number or a string
-	return string.format("%q", o)
-end
-
-Buffer = require("str_buffer").Buffer
-
-local buffer = Buffer()
-
-function save (name, value, saved)
-	saved = saved or {} -- initial value
-	
-	
-	buffer.add("%s = ", name)
-	
-	if type(value) == "number" or
-		type(value) == "string" or
-		type(value) == "boolean" or
-		type(value) == "nil" then
-		
-		buffer.add("%s\n", basicSerialize(value))
-		
-	elseif type(value) == "table" then
-		if saved[value] then -- value already saved?
-			buffer.add("%s\n", saved[value]) -- use its previous name
-		else
-			saved[value] = name -- save name for next time
-			buffer.add("{}\n") -- create a new table
-			
-			for k,v in pairs(value) do -- save its fields
-				k = basicSerialize(k)
-				local fname = string.format("%s[%s]", name, k)
-				save(fname, v, saved)
-			end
-		end
-	else
-		error("cannot save a " .. type(value))
-	end
-end	
-
-
--- All arrays should be named "a".
-local examples = {
-	function ()
-		local a = {x=1, y=2; {3,4,5}}
-		a[2] = a -- cycle
-		a.z = a[1] -- shared subtable
-		return a
-	end,
-	
-	function ()
-		local a = {{{}}}
-		return a
-	end,
-	
-	function ()
-		local a = {{{1,2,3}}, "a"}
-		return a
-	end,
-}
-
-
-save("a", examples[1]())
-local derivation = buffer.flush()
-
-local 
-for line in derivation:gmatch(".-\n") do
-	local stack, value = line:match("^(.-)%s*=%s*(.-)\n$")
-	local _, stack_depth = stack:gsub("%[.-]", "%0")
-	local tabs = string.rep("\t", stack_depth)
-	
-	if value == "{}" then
-		io.write(tabs, "{\n")
-	else
-		io.write(tabs, value, "\n")
-	end
-
-end
-
 --[[
-for k,v in pairs(assignments) do
-	print(k,v)
-end
+	The following is one solution, but there's a better one if
+you 
+	1. Pass through the array first with the book's version of save;
+	2. Keep that result in an array of strings;
+	3. 'load' each non-cyclic/shared entry into memory as a new array
+	(and delete it from the array);
+	4. Use our ex15-4 version of 'serialize' to serialize that new array;
+	5. Write the rest of the array of strings after that serialization.
 --]]
+	
 
-function run_tests_io ()
-	for _, ex in ipairs(examples) do
-		save("a", ex()) 
-		io.write("\n")
-	end
+function write (depth, fmt, ...)
+	local tabs = string.rep("\t", depth)
+	return io.write(string.format(tabs .. fmt, ...))
 end
+
+local VALID = "^[_%a][_%w]*$"
+
+function save (path, value, saved)
+
+	local deferred = {}
+	
+	local function defer (lhs, rhs)
+		deferred[#deferred + 1] = string.format("%s = %s", lhs, rhs)
+	end
+	
+	local saved = saved or {}
+	
+	local function save_1 (path, value, depth)
+		local t = type(value)
+		
+		if t == "string" or t == "number" or t == "boolean" or t == "nil" then
+			write(depth, "%q\n", value)
+		elseif t == "table" then
+			saved[value] = path
+			write(depth, "{\n")
+			
+			for k,v in pairs(value) do
+				if type(k) == "string" and k:match(VALID) then
+					local new_path = string.format("%s.%s", path, k)
+					
+					if saved[v] then 
+						defer(new_path, saved[v])
+					else
+						write(depth + 1, "%s = ", k)
+						save_1(new_path, v, depth + 1)
+						io.write("\n")
+					end
+					
+				elseif math.type(k) == "integer" then
+					local new_path = string.format("%s[%s]", path, string.format("%q", k))
+					
+					if saved[v] then
+						defer(new_path, saved[v])
+					else
+						save_1(new_path, v, depth + 1)
+						io.write("\n")
+					end
+				else
+					local new_path = string.format("%s[%s]", path, string.format("%q", k))
+					
+					if saved[v] then
+						defer(new_path, saved[v])
+					else
+						write(depth + 1, "[%q] = ", k)
+						save_1(new_path, v, depth  + 1)
+						io.write("\n")
+					end
+				end
+			end
+			
+			write(depth, "}\n")
+		else
+			error("cannot save a " .. t)
+		end
+	end
+			
+	save_1(path, value, 0)
+	
+	deferred[#deferred + 1] = ""
+	io.write(table.concat(deferred, "\n"))
+end
+	
+a = {x=3, y=5, {3,4,5}}
+a[2] = a
+a.z = a[1]
+
+save("a", a)
