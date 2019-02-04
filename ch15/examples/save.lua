@@ -2,12 +2,14 @@
 	Mostly copied from Listing 15.3: Saving tables with cycles.
 ]]
 
-function basicSerialize (o)
+local M = {}
+
+local function basicSerialize (o)
 	-- assume 'o' is a number or string
 	return string.format("%q", o)
 end
 
-function save (name, value, saved)
+function M.save (name, value, saved)
 	saved = saved or {}  -- initial value
 	io.write(name, " = ")
 	
@@ -33,3 +35,5 @@ function save (name, value, saved)
 		error("cannot save a " .. type(value))
 	end
 end
+
+return M
