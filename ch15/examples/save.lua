@@ -9,21 +9,32 @@ local function basicSerialize (o)
 	return string.format("%q", o)
 end
 
+local out = io.stdout 
+
+function M.output (filename)
+	local outstream = assert(io.open(filename, "w"))
+	out = outstream
+end
+
+function M.flush ()
+	out:flush()
+end
+	
 function M.save (name, value, saved)
 	saved = saved or {}  -- initial value
-	io.write(name, " = ")
+	out:write(name, " = ")
 	
 	if type(value) == "number" or
 		type(value) == "string" or
 		type(value) == "boolean" or
 		type(value) == "nil" then
-		io.write(basicSerialize(value), "\n"))
+		out:write(basicSerialize(value), "\n")
 	elseif type(value) == "table" then
 		if saved[value] then  -- value already saved?
-			io.write(saved[value], "\n")  -- use its previous name
+			out:write(saved[value], "\n")  -- use its previous name
 		else
 			saved[value] = name  -- save name for next time
-			io.write("{}\n")  -- create a new table
+			out:write("{}\n")  -- create a new table
 			
 			for k,v in pairs(value) do  -- save its fields
 				k = basicSerialize(k)
