@@ -14,100 +14,80 @@ function reload ()
 	dofile("/home/brandon/PIL/ch15/ex15-5.lua")
 end
 
---[[
-	obj: The Lua datatype we're serializing (stringifying) with this function.
-	depth: The nesting depth of 'obj'.
-	
-	Returns nil.
-]]
 
-local VALID_IDENTIFIER = "^[_%a][_%w]*$"
-
-local Buffer = require("str_buffer").Buffer
+function write (depth, fmt, ...)
+	local tabs = string.rep("\t", depth)
+	return io.write(string.format(tabs .. fmt, ...))
+end
 
 function basic_serialize (obj)
-
-	assert(
-		(type(obj) == "number" or
-		type(obj) == "string" or
-		type(obj) == "boolean" or
-		type(obj) == "nil"),
-		"Are you trying to serialize a complicated key? ;)"
-	)
-	
+	-- assume 'obj' is of one of the basic types
 	return string.format("%q", obj)
 end
 
-function serialize (obj, path, depth)
+local VALID = "^[_%a][_%w]*$"
+
+function save (path, value, saved)
+
+	local deferred = {""}
 	
-	local type_obj = type(obj)
+	local function defer (lhs, rhs)
+		deferred[#deferred + 1] = string.format("%s = %s", lhs, rhs)
+	end
 	
-	if type_obj == "number" or
-		type_obj == "string" or
-		type_obj == "boolean" or
-		type_obj == "nil" then
+	local saved = saved or {}
 	
-		return basic_serialize(obj)
+	write(0, "%s = ", path) -- needed, if we really want to read it back again.
+	
+	local function save_1 (path, value, depth)
+		local t = type(value)
 		
-	elseif type_obj == "table" then
-		local buffer = Buffer()
-		
-		-- Calculate the proper indentation for this table's elements.
-		local self_tabs = string.rep("\t", depth)
-		local el_tabs = string.rep("\t", depth + 1)
-		
-		buffer.add("\n%s{\n", self_tabs)
-		
-		-- Print the sequence portion first, then record the sequence
-		-- indices so that we can skip them when iterating across the
-		-- rest of the table.
-		local index_taken  = {} 
-		
-		buffer.add("%s", el_tabs)
-		
-		for i, seq_item in ipairs(obj) do
-			local sub_path = string.format("%s[%d]", path, i)
-			buffer.add("%s,", serialize(seq_item, sub_path, 0))
-			index_taken[i] = true
-		end
-		
-		buffer.add("\n")
-		
-		-- Write out the rest (non-sequential) part of the table.
-		for k,v in pairs(obj) do
+		if t == "string" or t == "number" or t == "boolean" or t == "nil" then
+			write(0, "%s", basic_serialize(value))
+		elseif t == "table" then
+			write(0, "{\n")
 			
-			if not index_taken[k] then
-		
-				if type(k) == "string" and k:match(VALID_IDENTIFIER) then
-					local sub_path = string.format("%s.%s", path, k)
-					buffer.add("%s%s = %s", el_tabs, k, serialize(v, sub_path, depth + 1))
+			-- Save the table's path, for later.
+			saved[value] = path
+			
+			for k,v in pairs(value) do
+			
+				local k_s = basic_serialize(k)
+				local path = string.format("%s[%s]", path, k_s)
+				
+				-- Self-reference found: defer.
+				if saved[v] then 
+					defer(path, saved[v])
+					goto continue
+				end
+					
+				if type(k) == "string" and k:match(VALID) then
+					write(depth + 1, "%s = ", k)
+				elseif math.type(k) == "integer" then
+					write(depth + 1, "")
 				else
-					local bs_k = basic_serialize(k)
-					local sub_path = string.format("%s[%s]", path, bs_k)
-					buffer.add("%s[%s] = %s", el_tabs, bs_k, serialize(v, sub_path, depth + 1))
+					write(depth + 1, "[%s] = ", k_s)
 				end
 				
-				buffer.add(",\n%s", type(v) == "table" and "\n" or "")
+				save_1(path, v, depth + 1)
+				
+				write(0, ",\n")
+				
+				::continue:: -- we came here to avoid a cycle/shared part.
 			end
+			
+			write(depth, "}")
+		else
+			error("cannot save a " .. t)
 		end
-		
-		buffer.add("%s}", self_tabs)
-		
-		return buffer.flush()
-	else
-		error("cannot serialize a " .. type_obj)
 	end
-end
-
---[[
-function sr_table ()
-	local a = {x=1, y=2, {3,4,5}}
-	a[2] = a -- cycle
-	a.z = a[1] -- shared subtable
+			
+	save_1(path, value, 0)
 	
-	return a
+	deferred[#deferred + 1] = ""
+	deferred[#deferred + 1] = ""
+	io.write(table.concat(deferred, "\n"))
 end
---]]
 
 examples = {
 
@@ -162,10 +142,41 @@ examples = {
 	-- t[1] == 3, the first "[1]" isn't a part of the table.
 	{[1] = 1, [2] = 2, 3},
 	
-	{ {3,4,5}, {5,6, {7,8,9}}},
-	
-	--sr_table(),
+	{ {1,2,3}, {4,5,6}, {7,8,9} },
+
 }
+
+-- Examples that use shared parts.
+a = {x=3, y=5, {3,4,5}}
+a[2] = a
+a.z = a[1]
+
+b = { {1,2,3}, {4,5,6, ["."] = 4}, a[1]}
+
+-- Use this as a control, to show that 'equal' below doesn't give false positives.
+z = {}
+
+
+-- Have 'save' write to an external file.
+io.output("serialized_tables.lua")
+
+local t = {}
+save("E", examples)
+
+-- Write out the special tables.
+save("A", a, t)
+save("B", b, t)
+
+
+save("Z", z)
+
+io.close() -- all done with writing!
+
+z[1] = "gotcha!"
+
+dofile("serialized_tables.lua")
+
+print(E)
 
 function equal (o1, o2)
 	
@@ -181,19 +192,23 @@ function equal (o1, o2)
 		T == "nil" then
 		return o1 == o2
 	elseif T == "table" then
-		for key, value in pairs(o1) do
-			return equal(value, o2[key])
+		
+		if #o1 == 0 and #o2 == 0 then return true
+		elseif #o1 == 0 then return false
+		else
+			for key, value in pairs(o1) do
+				return equal(value, o2[key])
+			end
 		end
 	else
 		error("Can't make that comparison")
 	end
 end
 
--- See if what we serialize is deep-equal to the original.
-function test_equality ()
+-- These print out 'true'.
+print(equal(E, examples))
+print(equal(A, a))
+print(equal(B, b))
+print(equal(Z, z)) -- should output 'false'.
 
-	for i, t in ipairs(examples) do
-		local initial_path = string.format("examples[%d]", i)
-		print(equal(t, load("return " .. serialize(t, initial_path, 0))())) 
-	end
-end
+
