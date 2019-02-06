@@ -45,5 +45,6 @@ function use_this (...)
 	F()	
 end
 
-use_this("local x = 10;", io.lines("tests16-2/test1.lua"), " print(x)")
-use_this("local key = 2;", io.lines("tests16-2/test2.lua", "L"), " print(keys[key])")
+use_this("local x = 10;", io.lines("tests16-2/test1.lua"), " print(x)")       
+use_this("local key = 2;", 
+	io.lines("tests16-2/test2.lua", "L"), " print(keys[key])")
