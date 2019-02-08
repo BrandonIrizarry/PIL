@@ -101,15 +101,58 @@ function stringrep_n (n)
 	assert(multiload(prefix, instructions, suffix))()
 end
 
--- Example: I want a use a function 'stringrep_10" (or any number, call it N):
-local N = 10
-stringrep_n (N)
-local subject = "Yeah!"
-local chain = stringrep_10(subject) -- return the subject, repeated in succession N times.
-local _, count = chain:gsub(subject, "%0")
-assert(count == N) -- prove there are N repetitions.
-print(chain)
-print(string.format("The subject '%s' was indeed repeated %d times.", subject, N))
+function load_stringrep_with_N (N)
 
--- tbc - compare the performance of these 'loaded' functions, with the given stringrep
--- (or else closures using it.)
+	-- Generate 'stringrep_N' in the global environment.
+	stringrep_n (N)
+
+	-- Instead of harcoding a call to, say, "stringrep_10", we can compile and assign its
+	-- value by hand, according to what its name should be, as a function of N.
+	return assert(load(string.format("return stringrep_%d", N)))()
+end
+
+-- Example: I want a use a function 'stringrep_10" (or any number, call it N):
+function basic_test (N)
+
+	local new_function = load_stringrep_with_N(N)
+	local subject = "Yeah!"
+	
+	-- Repeat the subject in succession N times, and then count the number of
+	-- repetitions of the subject in the resulting chain.
+	local chain = new_function(subject)
+	local _, count = chain:gsub(subject, "%0")
+	
+	-- Prove there are N repetitions, print the resulting chain, and a success message.
+	assert(count == N) 
+	print(chain)
+	print(string.format("The subject '%s' was indeed repeated %d times.", subject, N))
+end
+
+basic_test(3)
+
+
+-- Compare their running-times.
+local buster = 10^7
+
+function benchmark_regular (N)
+	local subject = "Yeah!"
+	
+	local start_time = os.clock()
+	stringrep(subject, N)
+	
+	print(os.clock() - start_time)
+end
+
+function benchmark_custom (N)
+	local subject = "Yeah!"
+	
+	local start_time = os.clock()
+	local new_function = load_stringrep_with_N(N)
+	new_function(subject)
+	
+	print(os.clock() - start_time)
+end
+	
+-- Difference is not that much.
+benchmark_regular(buster)
+benchmark_custom(buster)
