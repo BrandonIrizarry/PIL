@@ -1,25 +1,32 @@
-local M = {}
 
---[[
-	The function 'plot' writes to whatever the set output stream
-is, which is io.stdout by default. However, an invocation to io.output
-can change that.
-]]
+local function init (image_viewer, outfile_name)
 
-function M.plot (r, M, N)
-	io.write("P1\n", M, " ", N, "\n") -- header
-	for i = 1, N do
-		local y = (N - i*2)/N -- scale y to [-1,1)
+	local out = assert(io.open(outfile_name, "w")) or io.stdout
+	
+	
+	local function plot (r, M, N)
+		out:write("P1\n", M, " ", N, "\n") -- header
+		
+		for i = 1, N do
+			local y = (N - i*2)/N -- scale y to [-1,1)
 
-		for j = 1, M do
-			local x = (j*2 - M)/M
-			io.write(r(x, y) and "1" or "0")
+			for j = 1, M do
+				local x = (j*2 - M)/M
+				out:write(r(x, y) and "1" or "0")
+			end
+			out:write("\n")
 		end
-		io.write("\n")
+		
+		if out ~= io.stdout then out:close() end
+		
+		os.execute(string.format("%s %s", image_viewer, outfile_name))
 	end
+	
+	return {
+		shapes = require "plot.shapes",
+		transform = require "plot.transform",
+		plot = plot,
+	}
 end
 
-M.shapes = require "plot.shapes"
-M.transform = require "plot.transform"
-
-return M
+return { init = init }
