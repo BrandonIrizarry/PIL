@@ -17,8 +17,6 @@ local function init (image_viewer, outfile_name)
 			out:write("\n")
 		end
 		
-		if out ~= io.stdout then out:close() end
-		
 		os.execute(string.format("%s %s", image_viewer, outfile_name))
 	end
 	
