@@ -55,5 +55,7 @@ mt.__lt = function (a, b)
 	return not (b <= a) and a <= b
 end
 
+mt.__tostring = Set.tostring
+
 return Set
 
