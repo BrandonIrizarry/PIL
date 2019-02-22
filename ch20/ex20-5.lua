@@ -41,7 +41,7 @@ mt.__newindex = function (p, k, v)
 	outstream:close()
 end
 
--- Separating this out helped, though it wasn't strictly necessary.
+-- The 'f' (iterator/driver) function (see p. 174).
 local function iter (instream, k)
 	local byte = instream:read(1)
 	
@@ -59,6 +59,16 @@ mt.__pairs = function (p)
 	return iter, instream, 0
 end
 	
+mt.__len = function (p)
+	local filename = proxy_table[p]
+	local file = assert(io.open(filename))
+	
+	local current = file:seek() -- save current position
+	local size = file:seek("end") -- get file size
+	file:seek("set", current) -- restore position
+	
+	return size
+end
 
 function fileAsArray (filename)
 	local proxy = {}
@@ -74,3 +84,5 @@ local t = fileAsArray("examples/file.txt")
 for i, char in pairs(t) do
 	print(i, char)
 end
+
+print("Length: ", #t)
