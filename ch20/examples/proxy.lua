@@ -1,3 +1,5 @@
+-- Listing 20.2
+
 local T = {}
 
 function T.track (t)
