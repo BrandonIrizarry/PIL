@@ -25,7 +25,7 @@ function Stack:new (seq)
 			buffer[#buffer + 1] = stack.contents[i]
 		end
 		
-		return table.concat(buffer, " ")
+		return (#buffer > 0) and table.concat(buffer, " ") or "<empty>"
 	end
 			
 	setmetatable(stack, self)
