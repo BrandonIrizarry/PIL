@@ -20,4 +20,12 @@ sq:pop()
 print(sq)
 sq:insertbottom("D")
 print(sq)
--- ... and so on.
+-- ... and so on. But still no privacy:
+sq.contents = {}
+print(sq)
+
+-- Trying to hijack the code like this doesn't work, since sq.push is nil anyway -
+-- the 'push' method comes from Stack!
+sq.push = nil 
+sq:push("W")
+print(sq, sq.push)
