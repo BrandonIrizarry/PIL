@@ -11,7 +11,7 @@ function reload ()
 end
 
 
-Stack = {}
+local Stack = {}
 
 function Stack:new (seq)
 
@@ -21,6 +21,16 @@ function Stack:new (seq)
 	local stack = {contents = seq or {}} 
 	
 	self.__index = self
+	
+	self.__tostring = function ()
+		local buffer = {}
+		for i = 1, #stack.contents do
+			buffer[#buffer + 1] = stack.contents[i]
+		end
+		
+		return table.concat(buffer, " ")
+	end
+			
 	setmetatable(stack, self)
 	
 	return stack
@@ -42,21 +52,4 @@ function Stack:isempty ()
 	return #self.contents == 0
 end
 
--- Test.
-s = Stack:new ()
-s:push("faucets")
-print(s:top())
-s:push("open")
-print(s:top())
-s:push("till-full")
-print(s:top())
-print(s:isempty())
-s:pop()
-s:pop()
-print(s:top())
-s:pop()
-print(s:isempty())
-
--- No privacy.
-s.contents = {"hi", "there"}
-print(s:isempty())
+return Stack
