@@ -12,7 +12,8 @@ and cons.
 
 --[[
 	The pro is that the implementation is almost the same as the
-conventional one.
+conventional one. Also, an object's data is hidden, and only
+read/writable via object methods.
 	The con is that extending objects is difficult, since I have
 to define my own protector table with each module I write.
 ]]
