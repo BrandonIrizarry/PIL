@@ -10,18 +10,45 @@ translate their 'self' parameters to the real tables where they operate.
 and cons.
 ]]
 
-local proxy_table = {}
+--[[
+	The pro is that the implementation is almost the same as the
+conventional one.
+	The con is that extending objects is difficult, since I have
+to define my own protector table with each module I write.
+]]
 
-proxy_table.__index = function (proxy_object, field)
-	local t = proxy_table[proxy_object] 
+local P = {}
 
-	return t[k]
+function protect (T)
+	local proxy = {}
+	P[proxy] = T
+	
+	return proxy
 end
 
-local Account = {}
+local Account = {balance = 0}
+Account = protect(Account)
 
-function Account:new (a)
-	a = a or {}
-	self.__index = 
+function Account:new (data)
+	local acct = data or {balance = 0}
+	acct = protect(acct)
+	
+	self.__index = self
+	setmetatable(acct, self)
+	
+	return acct
+end
 
+function Account:withdraw (amt)
+	P[self].balance = (P[self].balance or 0) - amt
+end
 
+function Account:deposit (amt)
+	P[self].balance = (P[self].balance or 0) + amt
+end
+
+function Account:balance ()
+	return (P[self].balance or 0)
+end
+
+return Account:new()
