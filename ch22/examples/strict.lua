@@ -33,16 +33,16 @@ function trip_error ()
 	somethng = 42 -- misspelled; would create an accidental global.
 end
 
-local status, msg = pcall(trip_error)
-assert(not status)
+local good, msg = pcall(trip_error)
+assert(not good)
 print(msg)
 	
 function trip_error2 ()
 	local x = 12
 	
-	return X
+	return X -- accidentally reading from a nil global.
 end
 
-status, msg =  pcall(trip_error2)
-assert(not status)
+good, msg =  pcall(trip_error2)
+assert(not good)
 print(msg)
