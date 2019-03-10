@@ -29,6 +29,7 @@ function set_innermost_field (address, value)
 end
 
 print(get_innermost_field("io.read"))
+print(get_innermost_field("abc.init"))
 
 set_innermost_field("t.x.y", 10)
 
