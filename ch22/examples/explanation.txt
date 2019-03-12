@@ -1,0 +1,94 @@
+ lua-users home
+	lua-l archive
+
+[Date Prev][Date Next][Thread Prev][Thread Next] [Date Index] [Thread
+Index] Subject: Re: _ENV vs _G From: Tim Hill <drtimhill@...> Date: Mon,
+11 Aug 2014 13:19:45 -0700 On Aug 11, 2014, at 12:13 PM, Mason Mackaman
+<masondeanm@aol.com> wrote:
+
+> Okay, I’ve figured out the relationship between _G and _ENV,
+_ENV=_G. The reason things were confusing me before is I had forgotten
+that _G is really _ENV._G, so that clears that up. But now the other
+part of my question is even bigger, What the hell is the point of _G?  >
+
+Not quite. The whole _ENV and _G thing can appear a bit messy,
+and partly this is historical. Here’s the way it works (with some
+simplifications)...
+
+Inside Lua is a special built-in table (a Lua table) known as the
+Registry. It is NOT normally accessible to Lua, but is accessible to
+C code via the Lua API. (There is actually one registry per main Lua
+state, but that’s not important for this discussion.) Stored at a
+well-known key (index) in this Registry is another Lua table which is
+the “distinguished environment” otherwise known as the table that
+holds Lua globals (as you know Lua globals are just values in a Lua
+table). When this global variable table is first created, the _G entry
+in the table is also set to reference the table (a self-reference). This
+only happens once (I’m not absolutely certain of this, but it seems
+to be implied by the docs).
+
+When any Lua chunk is compiled and loaded, it starts off life as a
+Lua function (actually a closure) on the Lua stack ready to be called
+(all chunks are compiled as functions). This function will always have
+an upvalue named _ENV.. By default, the compiled function will have _ENV
+initialized to the “distinguished environment” that is stored in the
+Registry as explained above. However, you can, at chunk compile/load time,
+supply a *different* table to use as the value of _ENV for that chunk
+(see the various load() functions). The content of this custom table is
+entirely in your control, in particular Lua makes NO attempt to place
+an _G entry in it.
+
+Also, when a function is compiled, Lua treats all global variable
+accesses as if they were prefixed with “_ENV.”, hence “foo” is
+converted to “_ENV.foo”. By default, this means that all global
+variable accesses are converted to table lookups in the table stored
+in the _ENV upvalue. And, as explained above, this table is either the
+distinguished environment or another table supplied by you when the
+chunk was compiled/loaded.
+
+However, the _ENV name is not magical, apart from it’s being used to
+decorate global variable names by the compiler. Once the compiler has
+added the “_ENV.” prefix it treats the name normally. This means
+you can write code like this in Lua:
+
+foo = 10 local _ENV = { foo=20 } print(foo)
+
+In both cases, “foo” is converted to “_ENV.foo”. However, in
+the first case, “_ENV.foo” refers to the table in the _ENV upvalue,
+while in the second case “_ENV.foo” refers to the foo value in the
+newly created local _ENV table (and hence will print 20).
+
+How does this all relate to _G? The ONLY thing Lua does is set _G in the
+initial distinguished environment. That’s it. _G pre-dates the use
+of _ENV (which was new in Lua 5.2), and my assumption is that it was
+intended (among other things) to allow functions to run in explicitly
+specified global environments, for example:
+
+function doit(X, a, b)
+	X.print(a+b)
+end doit(_G,10,20)
+
+This kind of thing is no longer necessary with 5.2 as a result of the
+new _ENV model (which is much more elegant as it avoids the need for
+all the manual “X” decorations).
+
+What all this means is that whatever is in _ENV at any point in your
+code *IS* the current global environment by definition, while what is
+in _G is whatever your code has defined it to be, and may or may not be
+what you intend/need.
+
+—Tim
+
+
+
+
+
+
+
+
+Follow-Ups: Re: _ENV vs _G, Ashwin Hirschi References: _ENV vs _G, Mason
+Mackaman Re: _ENV vs _G, Steven Degutis Re: _ENV vs _G, Coda Highland Re:
+_ENV vs _G, Steven Degutis Re: _ENV vs _G, Coda Highland Re: _ENV vs _G,
+Mason Mackaman Prev by Date: Re: _ENV vs _G Next by Date: Re: _ENV vs
+_G Previous by thread: Re: _ENV vs _G Next by thread: Re: _ENV vs _G
+Index(es): Date Thread
