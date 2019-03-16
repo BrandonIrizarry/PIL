@@ -41,6 +41,8 @@ local new_gt = {print = print, pcall = pcall, error = error}
 local closedefs = 
 	{__newindex = 
 		function () 
+			-- Pass '2' to error to get the line number of the _caller_
+			-- responsible for throwing the error.
 			error("Definitions are now closed for the current _ENV", 2) 
 		end
 	}
@@ -52,7 +54,8 @@ setmetatable(new_gt, closedefs)
 -- Now change _ENV.
 _ENV = new_gt
 
--- 
+-- Call 'foo' to demonstrate that its global references belong to a 
+-- different _ENV. A pointer diagram may be in order to explain this.
 foo()
 
 -- Encapsulate the offending line in some error-handling code.
@@ -72,13 +75,13 @@ at the Lua REPL:
 	
 	t and a are now references to the same table; if I change fields in one,
 the fields of the other automatically change. However, if I change the value
-of one of the tables:
+of one of the tables, the other one remains unaffected:
 
 	> t = {'a', 'b', 'c'}
 	> a[1], a[2], a[3]
 	1	2	3
 	
-As you can see, a still points to what t had pointed to; a and t have
+As you can see, 'a' still points to what t had pointed to; 'a' and t have
 independent lives and existences.
 
 	2. In the original example, the function foo closes over the local _ENV.
@@ -86,7 +89,8 @@ Now there are two values of _ENV: the global one, and the one that the closure
 foo "carries around", which points to what global _ENV points to.
 	The line _ENV.X = 13 trivially alters global _ENV, but also alters foo _ENV, 
 since they point to the same table. However, changing global _ENV to a different 
-value doesn't alter foo _ENV's referent (see (1)!)
+value doesn't alter foo _ENV's referent (which was initially also global _ENV's
+referent - see (1)!)
 	In my example, I used 'e' to refer to foo _ENV, since it's clear that 
 e has nothing to do with how you change _ENV at a later point in the file.
 	Finally, if _ENV is nil, then clearly _ENV.X = 0 will throw an error, since
