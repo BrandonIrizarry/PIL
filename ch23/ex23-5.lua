@@ -18,51 +18,32 @@ loop creating tables.)
 	performance of your script with this approach?
 ]]
 
-
-local SIZE = 10^7
-
-function run_script (sp_arg, ssm_arg)
-
-	-- 25-26K.
-	print(collectgarbage("count") * 1024)
-
-	start_time = os.clock()
-	
-	collectgarbage("setpause", sp_arg)
-	collectgarbage("setstepmul", ssm_arg)
-
-	local a = {}
-	
-	--[[setmetatable(a, {__mode = "k"})]]
-	collectgarbage("stop")
-	
-	for i = 1, SIZE do
-		a[i] = {}
-	end
-	
-	print(collectgarbage("isrunning"))
-	
-	for i = SIZE+1, 2*SIZE do
-		a[i] = {}
-	end
-	
-	print(collectgarbage("isrunning"))
-	
-	for i = 2*SIZE+1, 3 * SIZE do
-		a[i] = {}
-	end
-	
-	print(collectgarbage("isrunning"))
-
-	
-	-- How much memory have we accumulated?
-	print(collectgarbage("count") * 1024)
-	
-	-- Print how long the code took to run.
-	--[[local msg = string.format("Time, with '%s' set to %s:", cg_arg, data)]]
-	local msg = string.format("time, with pause: %s, stepmul: %s", sp_arg, ssm_arg)
-	print(msg, os.clock() - start_time)
+local function fmt_write (fmt, ...)
+	io.write(string.format(fmt, ...))
 end
 
+function mem_usage ()
+	local mem = collectgarbage("count") * 1024
+	fmt_write("Memory in use: %d\n",  mem)
+end
 
-run_script(200, 200)
+--[[
+collectgarbage("setpause", arg[1])
+collectgarbage("setstepmul", arg[2])
+--]]
+
+collectgarbage("stop")
+
+local start = os.clock()
+
+
+local a = {}
+
+for i = 1, 10^7 do
+	a[i] = {}
+	if i % 10^6 == 0 then
+		print(collectgarbage("step"))
+	end
+end
+
+fmt_write("Time: %f\n", os.clock() - start)
