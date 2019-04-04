@@ -1,23 +1,18 @@
 
 
-local dictionary = {
-	add = function (x, y)
-		return x + y
-	end,
-	
-	sub = function (x, y)
-		return x - y
-	end,
-	
-	mul = function (x, y)
-		return x * y
-	end,
-	
-	div = function (x, y)
-		return x // y
+
+
+--[[
+dictionary = {
+	["+"] = function (context)
+		local args = table.pack(...)
+		local size = args.n
+		
+		return args[size - 1], args[size]
 	end,
 }
-
+--]]
+--[[
 local arities = setmetatable({}, {__index = function (_, word)
 	if word == "add" or word == "sub" or word == "mul" or word == "div" then
 		return 2
@@ -27,7 +22,9 @@ local arities = setmetatable({}, {__index = function (_, word)
 		return -1
 	end
 end})
+--]]
 
+--[[
 stack = "1 2 add 4 sub kick"
 
 -- Current live state of the stack is stored here.
@@ -70,4 +67,4 @@ end
 -- Nothing gets added so far.
 -- The function arities should really take care of themselves!
 print(#_context)
-
+--]]
