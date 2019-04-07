@@ -38,7 +38,8 @@ end
 	a:C(n-1,m-1)++C(n-1,m)
 ]]
 
-
+-- Note that 'n' is always the size of the input array. 
+-- We don't need to pass it to subrecursions (see ex24-2 :) )
 function C(array, n, m)
 
 	if m == 0 then
