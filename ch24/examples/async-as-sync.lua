@@ -10,6 +10,9 @@ function run (code)
 	lib.runloop()		-- start event loop
 end
 
+local hold_pco = {}
+local hold_gco = {}
+
 function putline (stream, line)
 	local co = coroutine.running()		-- the calling coroutine
 	
@@ -29,11 +32,12 @@ function getline (stream, line)
 		function (line)
 			coroutine.resume(co, line)
 		end
-		
+	
 	lib.readline(stream, callback)
 	local line = coroutine.yield()
 	
 	return line
 end
+
 
 return {run = run, putline = putline, getline = getline}
