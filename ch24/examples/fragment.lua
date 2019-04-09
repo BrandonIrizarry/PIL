@@ -21,6 +21,6 @@ function reverse_lines ()
 end
 
 run(reverse_lines)
-print("Done with first session; begin second session")
-run(reverse_lines)
+--print("Done with first session; begin second session")
+--run(reverse_lines)
 
