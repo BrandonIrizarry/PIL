@@ -16,18 +16,16 @@ end
 -- Returns the callback associated with this coroutine.
 -- If the callback doesn't exist yet, then define and store it.
 
--- FIXME! We need to memoize the callbacks, but they're anonymous functions,
--- and so a new, unique one is made each time... have _this_ function 
--- define the callback, since we pass in the coroutine as 'co' anyway... tbc.
-function memo_callback (co, fn)
-	local c_key = tostring(fn)
-	local callback = callback_memo[c_key]
+function memo_callback (co)
+	-- There's only one function we need to memo.
+	local callback = callback_memo[1]
 	
 	if callback == nil then
-		callback = fn
-		callback_memo[c_key] = callback
+		print("not yet.")
+		callback = function (line) coroutine.resume(co, line) end
+		callback_memo[1] = callback
 	else
-		print("we got it!")
+		print("finally.", collectgarbage("count") * 1024)
 	end
 	
 	return callback
@@ -35,14 +33,18 @@ end
 
 function putline (stream, line)
 	local co = coroutine.running()		-- the calling coroutine
-	local callback = memo_callback(co, function () coroutine.resume(co) end)
+	local callback = memo_callback(co)
+	--local callback = function () coroutine.resume(co) end
+	--print("mem-putline: ", collectgarbage("count") * 1024)
 	lib.writeline(stream, line, callback)
 	coroutine.yield()
 end
 
 function getline (stream, line)
 	local co = coroutine.running()		-- the calling coroutine
-	local callback = memo_callback(co, function (line) coroutine.resume(co, line) end)	
+	local callback = memo_callback(co)	
+	--local callback = function (line) coroutine.resume(co, line) end
+	--print("mem-getline: ", collectgarbage("count") * 1024)
 	lib.readline(stream, callback)
 	local line = coroutine.yield()
 	
