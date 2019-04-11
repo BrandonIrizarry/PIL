@@ -4,12 +4,15 @@ local lib = require "async-lib"
 local callback_memo = {}
 
 function run (code)
-	local co = coroutine.wrap(function ()
+	local co = coroutine.create(function ()
 		code()
 		lib.stop()		-- finish event-loop when done
+		return "done"
 	end)
 	
-	co()				-- start the coroutine
+	lib.show_queue()
+	print("start!", coroutine.resume(co))				-- start the coroutine
+	lib.show_queue()
 	lib.runloop()		-- start event loop
 end
 
@@ -21,35 +24,46 @@ function memo_callback (co)
 	local callback = callback_memo[1]
 	
 	if callback == nil then
-		print("not yet.")
-		callback = function (line) coroutine.resume(co, line) end
+		--print("not yet.")
+		callback = function (line) return coroutine.resume(co, line) end
 		callback_memo[1] = callback
 	else
-		print("finally.", collectgarbage("count") * 1024)
+		--print("finally.", collectgarbage("count") * 1024)
 	end
 	
 	return callback
 end
 
+
 function putline (stream, line)
 	local co = coroutine.running()		-- the calling coroutine
 	local callback = memo_callback(co)
-	--local callback = function () coroutine.resume(co) end
-	--print("mem-putline: ", collectgarbage("count") * 1024)
 	lib.writeline(stream, line, callback)
-	coroutine.yield()
+	coroutine.yield("W")
 end
 
+--[[
 function getline (stream, line)
 	local co = coroutine.running()		-- the calling coroutine
 	local callback = memo_callback(co)	
-	--local callback = function (line) coroutine.resume(co, line) end
-	--print("mem-getline: ", collectgarbage("count") * 1024)
 	lib.readline(stream, callback)
-	local line = coroutine.yield()
+	local line = coroutine.yield("R")
 	
 	return line
 end
+--]]
+
+-- FIXME - which is the right parent coroutine? And other questions... tbc.
+function getline (stream)
+	local co = coroutine.running()
+	local callback = memo_callback(co)
+	lib.readline(stream, callback)
+	coroutine.yield()
+end
 
 
-return {run = run, putline = putline, getline = getline}
+function lines (stream)
+	return coroutine.wrap(function () getline(stream) end)
+end
+
+return {run = run, putline = putline, getline = getline, lines = lines}
