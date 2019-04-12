@@ -42,8 +42,7 @@ function putline (stream, line)
 	coroutine.yield("W")
 end
 
---[[
-function getline (stream, line)
+function getline (stream)
 	local co = coroutine.running()		-- the calling coroutine
 	local callback = memo_callback(co)	
 	lib.readline(stream, callback)
@@ -51,19 +50,12 @@ function getline (stream, line)
 	
 	return line
 end
---]]
-
--- FIXME - which is the right parent coroutine? And other questions... tbc.
-function getline (stream)
-	local co = coroutine.running()
-	local callback = memo_callback(co)
-	lib.readline(stream, callback)
-	coroutine.yield()
-end
-
 
 function lines (stream)
-	return coroutine.wrap(function () getline(stream) end)
+	return function ()
+		return getline(stream)
+	end
 end
+
 
 return {run = run, putline = putline, getline = getline, lines = lines}

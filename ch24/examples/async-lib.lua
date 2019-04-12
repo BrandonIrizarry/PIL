@@ -30,7 +30,7 @@ function lib.runloop ()
 		if nextCmd == "stop" then
 			break
 		else
-			print(nextCmd()) -- perform next operation; "goto yield in getline/putline."
+			nextCmd() -- perform next operation; "goto yield in getline/putline."
 			-- note that the yields ultimately come back _here_, which is how the event loop
 			-- is even able to proceed in the first place.
 		end
