@@ -7,43 +7,42 @@ threads concurrently? What would you have to change?
 
 local lib = require "examples.async-lib"
 
---[[
+--[[ 
+
+This is what the function for two threads would look like:
+
 function run (code1, code2)
 	local co1 = coroutine.create(function ()
 		code1()
 		lib.stop()
 	end)
 	
-	local co2 = coroutine.create(function ()
-		code2()
-	end)
+	local co2 = coroutine.create(code2)
 	
 	coroutine.resume(co1)
 	coroutine.resume(co2)
 	lib.runloop()
 end
 
-function putline (stream, line)
-	local co = coroutine.running()
-	local callback = function () coroutine.resume(co) end
-	lib.writeline(stream, line, callback)
-	coroutine.yield()
-end
---]]
+	Note that we only had to change the definition of 'run', nothing
+else - neither in the threads, nor in the current library, nor
+nor in 'async-lib'. (I threw in some debugging stuff in e.g. async-lib, though,
+to help trace what the program does.)
+	The function 'run' now takes at least one required thread, plus any
+optional number of threads.
+]]
 
--- FIXME: This general version doesn't work - find the misstep. tbc.
 function run (code1, ...)
 	local co1 = coroutine.create(function ()
 		code1()
 		lib.stop()
 	end)
 	
-
 	local cbodies = table.pack(...)
 	local co_s = {}
 	
 	for i = 1, cbodies.n  do
-		table.insert(co_s, coroutine.create(function () cbodies[i]() end))
+		table.insert(co_s, coroutine.create(cbodies[i]))
 	end
 	
 	coroutine.resume(co1)
@@ -55,9 +54,16 @@ function run (code1, ...)
 	lib.runloop()
 end
 
+function putline (stream, line)
+	local co = coroutine.running()
+	local callback = function () return co, coroutine.resume(co) end
+	lib.writeline(stream, line, callback)
+	coroutine.yield()
+end
+
 function getline (stream)
 	local co = coroutine.running()
-	local callback = function (l) coroutine.resume(co, l) end
+	local callback = function (l) return co, coroutine.resume(co, l) end
 	lib.readline(stream, callback)
 	local line = coroutine.yield()
 	return line

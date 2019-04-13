@@ -27,10 +27,11 @@ end
 function lib.runloop ()
 	while true do
 		local nextCmd = table.remove(cmdQueue, 1)
+		print(nextCmd)
 		if nextCmd == "stop" then
 			break
 		else
-			nextCmd() -- perform next operation; "goto yield in getline/putline."
+			print(nextCmd()) -- perform next operation; "goto yield in getline/putline."
 			-- note that the yields ultimately come back _here_, which is how the event loop
 			-- is even able to proceed in the first place.
 		end
