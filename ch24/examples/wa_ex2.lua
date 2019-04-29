@@ -20,6 +20,10 @@ routines.doTextChar = function (phrase)
 	end
 end
 
+--[[
 doOnceT = coroutine.create(routines.doOnce)
 doLoopT = coroutine.create(routines.doLoop)
 doTextCharT = coroutine.create(routines.doTextChar)
+--]]
+
+return routines
