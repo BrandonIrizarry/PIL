@@ -1,17 +1,18 @@
+-- Make global for debugging purposes.
 routines = {}
 
-routines.doOnce = function (phrase)
+function routines.doOnce (phrase)
 	print(phrase)
 end
 
-routines.doLoop = function (num_iterations)
+function routines.doLoop (num_iterations)
 	for i = 1, num_iterations do
 		print("Iteration: ", i)
 		coroutine.yield()
 	end
 end
 
-routines.doTextChar = function (phrase)
+function routines.doTextChar (phrase)
 	local nchars = #phrase
 	
 	for i = 1, nchars do
