@@ -1,7 +1,12 @@
 --[[
-	I left in some commented-out old code, because I had used it as
-scaffolding to figure out what the problem was asking, and I find such code 
-instructive in reminding me HOW I arrived at a solution.
+	Exercise 24.6
+	
+	Implement a transfer function in Lua. If you think about resume-yield as 
+similar to call-return, a transfer would be like a goto: it suspends the 
+running coroutine and resumes any other coroutine, given as an argument. 
+	(Hint: use a kind of dispatch to control your coroutines. Then, a transfer
+would yield to the dispatch signalling the next coroutine to run, and the
+dispatch would resume the next coroutine.)
 ]]
 
 nlf = require "nlf"
