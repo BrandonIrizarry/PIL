@@ -2,6 +2,11 @@
 
 local numbers, letters, figures = {}, {}, {}
 
+-- Short versions of the above. Make sure these are sets, not sequences!
+local s_num = {[1] = true, [2] = true, [3] = true}
+local s_lett = {["a"]=true, ["b"]=true, ["c"]=true}
+local s_fig = {["!"]=true, ["@"]=true, ["#"]=true}
+
 -- Contains numbers.
 for i = 1, 10 do
 	numbers[i] = true
@@ -36,4 +41,7 @@ return {
 			figures = figures, 
 			fmt_write = fmt_write,
 			print_set = print_set,
+			s_num = s_num,
+			s_lett = s_lett,
+			s_fig = s_fig,
 }

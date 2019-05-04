@@ -1,39 +1,30 @@
+--[[
+	I left in some commented-out old code, because I had used it as
+scaffolding to figure out what the problem was asking, and I find such code 
+instructive in reminding me HOW I arrived at a solution.
+]]
+
 nlf = require "nlf"
 
-letters, numbers, figures = nlf.letters, nlf.numbers, nlf.figures
+--letters, numbers, figures = nlf.letters, nlf.numbers, nlf.figures
+letters, numbers, figures = nlf.s_lett, nlf.s_num, nlf.s_fig
 fmt_write = nlf.fmt_write
 print_set = nlf.print_set
 
 -- Store our results in a set.
 result_chars = {}
 
-function dispatch (co, ...)
-
-	coroutine.resume(co, ...)
-	--[[
-	while coroutine.status(new_co) ~= "dead" do
-		new_co = coroutine.resume(transfer, new_co)
-	end
-	--]]
+-- The key to making this all work!
+function transfer (fn, ...)
+	Cos[fn].args = table.pack(...)
+	coroutine.yield(Cos[fn])
 end
 
-
-function transfer (co, ...)
-	
-	local _dispatch
-	
-	if type(_G.dispatch) ~= "thread" then
-		_dispatch = coroutine.create(dispatch)
-	end
-	
-	coroutine.resume(_dispatch, co, ...)
-end
-
-
+-- End coroutine management.
 
 function get_letter ()
 	for l in pairs(letters) do
-		fmt_write("Do you want this character (y for yes): %s >", l)
+		fmt_write("\nDo you want this character (y for yes): %s >", l)
 		local ans = io.read()
 		
 		if ans == "y" then
@@ -41,7 +32,7 @@ function get_letter ()
 			fmt_write("Added '%s' to result_chars.\n", l)
 		else
 			::try_again::
-			fmt_write("Where do you want to go (n, f)?")
+			fmt_write("\nWhere do you want to go (n, f)?")
 			local ans = io.read()
 			
 			if ans == "n" then
@@ -60,7 +51,7 @@ end
 
 function get_number ()
 	for n in pairs(numbers) do
-		fmt_write("Do you want this character (y for yes): %d >", n)
+		fmt_write("\nDo you want this character (y for yes): %d >", n)
 		local ans = io.read()
 		
 		if ans == "y" then
@@ -68,13 +59,15 @@ function get_number ()
 			fmt_write("Added '%s' to result_chars.\n", tostring(n))
 		else
 			::try_again::
-			fmt_write("Where do you want to go (l, f)?")
+			fmt_write("\nWhere do you want to go (l, f)?")
 			local ans = io.read()
 
 			if ans == "l" then
 				transfer(get_letter)
 			elseif ans == "f" then
 				transfer(get_figure)
+			elseif ans == nil then
+				break
 			else
 				print("Not a valid place!")
 				goto try_again
@@ -85,7 +78,7 @@ end
 
 function get_figure ()
 	for f in pairs(figures) do
-		fmt_write("Do you want this character (y for yes): %s >", f)
+		fmt_write("\nDo you want this character (y for yes): %s >", f)
 		local ans = io.read()
 		
 		if ans == "y" then
@@ -93,13 +86,15 @@ function get_figure ()
 			fmt_write("Added '%s' to result_chars.\n", f)
 		else
 			::try_again::
-			fmt_write("Where do you want to go (l, n)?")
+			fmt_write("\nWhere do you want to go (l, n)?")
 			local ans = io.read()
 
 			if ans == "l" then
 				transfer(get_letter)
 			elseif ans == "n" then
 				transfer(get_number)
+			elseif ans == nil then
+				break
 			else
 				print("Not a valid place!")
 				goto try_again
@@ -109,27 +104,26 @@ function get_figure ()
 end
 
 
-transfer(get_letter)
+local Cos = {}
 
-
---main()
---[[
-function tracks ()
-	repeat
-		local what = io.read()
-		
-		if what == "l" then
-			print("letter")
-		elseif what == "n" then
-			print("number")
-		elseif what == "f" then
-			print("figure")
-		elseif not what then
-			print("bye")
-		else
-			print("not recognized")
-		end
-	until not what
+function register_as_co (fn, ...)
+	local co = coroutine.create(fn)
+	Cos[fn] = {co = co, args = table.pack(...)}
 end
-tracks()
---]]
+
+-- Start registering the above functions as coroutines.
+register_as_co(get_letter)
+register_as_co(get_number)
+register_as_co(get_figure)
+
+-- Define the actions of the runner.
+function runner ()
+	for _, cot in pairs(Cos) do
+		local _, next_thing = coroutine.resume(cot.co, cot.args)
+	end
+	
+	print_set(result_chars)
+end
+
+-- Start executing the coroutines.
+runner()

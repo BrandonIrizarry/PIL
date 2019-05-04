@@ -1,4 +1,5 @@
 queue = require "queue"
+routines = require "wa_ex2"
 
 dispatcher = queue:new()
 
@@ -10,8 +11,6 @@ function dispatcher:add_routine (fn, ...)
 	local co = coroutine.create(fn)
 	local task = {co = co, params = table.pack(...)}
 	self:add_task(task)
-	
-	return task
 end
 
 function dispatcher:run ()
@@ -37,7 +36,6 @@ end
 	
 local runner = dispatcher:new()
 
-routines = require "wa_ex2"
 
 runner:add_routine(routines.doOnce, "Hello World")
 runner:add_routine(routines.doLoop, 3)
