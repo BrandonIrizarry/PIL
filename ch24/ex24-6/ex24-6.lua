@@ -9,7 +9,7 @@ would yield to the dispatch signalling the next coroutine to run, and the
 dispatch would resume the next coroutine.)
 ]]
 
-nlf = require "examples.nlf"
+nlf = require "nlf"
 
 --letters, numbers, figures = nlf.letters, nlf.numbers, nlf.figures
 letters, numbers, figures = nlf.s_lett, nlf.s_num, nlf.s_fig
@@ -122,7 +122,9 @@ register_as_co(get_number)
 register_as_co(get_figure)
 
 -- Define the actions of the runner.
-function runner ()
+function runner (cot)
+	-- Hmm... we're not understanding something here.
+	-- tbc - look at the paper. What can we simplify here? tbc.
 	for _, cot in pairs(Cos) do
 		local _, next_thing = coroutine.resume(cot.co, cot.args)
 	end
@@ -131,4 +133,4 @@ function runner ()
 end
 
 -- Start executing the coroutines.
-runner()
+runner(Cos[get_letter])
