@@ -30,3 +30,5 @@ function coro.transfer (co, ...)
 		co, ... = co(...)
 	end
 end
+
+return coro
