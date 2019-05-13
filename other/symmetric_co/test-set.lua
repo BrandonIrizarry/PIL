@@ -35,9 +35,13 @@ w:display_removable()
 q = w:new()
 
 q:display_removable()
-print(q:size())
+print(q:size() == 5)
 print(q.corn)
 q:remove"grapes"
-print(q:size())
+print(q:size() == 5)
+print(q.candy)
 
+s:remove"house"
+
+print(q:size() == 4)
 
