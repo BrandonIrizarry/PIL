@@ -1,19 +1,3 @@
-Set = {}
-
-function Set:new (seq)
-	
-	self.__index = self
-	
-	local set = {}
-
-	-- Load up the set.
-	for _, thing in ipairs(seq) do
-		set[thing] = true
-	end
-	
-	return setmetatable(set, self)
-end
-
 
 Room = {}
 
