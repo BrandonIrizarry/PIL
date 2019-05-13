@@ -48,28 +48,9 @@ end
 -- Size will also include inherited elements.
 function Set:size ()
 	-- Need all metatables, not just the immediate parent!
-	
-	print("for this table:")
-	for k,v in pairs(getmetatable(self)) do
-		if k == "size" then print(k,v) end
-	end
-
-	--[[
-	print("again:")
-	for k,v in pairs(self) do
-		if k == "size" then print(k,v) end
-	end
-	--]]
-	
-	local more 
-	if getmetatable(self).size then
-		more = getmetatable(self):size()
-	else
-		more = 0
-	end
-	
-	--return Sizes[self] + getmetatable(self):size()
-	return Sizes[self] + more
+	-- So use recursion.	
+	local mt = getmetatable(self)
+	return Sizes[self] + (mt and mt:size() or 0)
 end
 
 -- Displays original elements, not inherited ones.
