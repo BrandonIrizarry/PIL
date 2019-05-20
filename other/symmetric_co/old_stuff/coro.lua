@@ -23,10 +23,12 @@ function coro.transfer (co, val)
 	while true do
 		coro.current = co
 	
+		-- If I want to go to the main coroutine, return an answer.
 		if co == coro.main then
 			return val
 		end
 		
+		-- If I want to go to any other coroutine, simply resume it.
 		co, val = co(val)
 	end
 end
