@@ -37,6 +37,11 @@ function symm.create (fn)
 	return coroutine.create(g)
 end
 
+function symm.transfer (new_co, val)
+
+-- what to do here?
+end
+
 local flowers = {"rose", "daisy", "violet", "peony", "sunflower"}
 local fruits = {"apple", "orange", "lemon", "banana", "grape"}
 local basket = {}
@@ -84,7 +89,7 @@ function get_flowers (bi)
 			bi = coroutine.yield(get_fruits, bi)
 		elseif ans == nil then
 			print("No more collection? OK.")
-			coroutine.yield(finish)
+			break
 		else
 			print("Invalid selection")
 		end
@@ -106,7 +111,7 @@ function get_fruits (bi)
 			bi = coroutine.yield(get_flowers, bi)
 		elseif ans == nil then
 			print("No more collection? OK.")
-			coroutine.yield(finish) 		
+			break
 		else 			
 			print("Invalid selection")
 		end
