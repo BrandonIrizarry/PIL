@@ -10,15 +10,29 @@ the escape sequence \x for all bytes:
 	As an improved version, use also the escape sequence \z to break long lines.
 ]]
 
+--[[
 function reload ()
 	package.loaded["/home/brandon/PIL/ch10/ex10-5.lua"] = nil
 	dofile("/home/brandon/PIL/ch10/ex10-5.lua")
 end
+--]]
 
+function hex_format (char)
+	if type(char) ~= "string" then
+		error("Invalid input to 'hex_format'", 2)
+	end
+	
+	if char:len() ~= 1 then
+		error("Invalid input length to 'hex_format'", 2)
+	end
+	
+	return "\\x"..string.format("%02X", string.byte(char))
+end
+	
 -- The first version of 'escape'.
 function escape_v1 (str)
 	return (str:gsub(".", function (w)
-		return "\\x" .. string.format("%02X", string.byte(w))
+		return hex_format(w)
 	end))
 end
 
@@ -26,13 +40,9 @@ end
 function escape (str)
 	return (str:gsub ("()(.)", function (index, char)
 		local col_number = index % 20 -- fit output comfortably onto screen.
-		local hex_formatted = "\\x" .. string.format("%02X", string.byte(char))
-
-		if col_number == 0 then -- index >= 1, no need to check 'index ~= 0'
-			return hex_formatted .. "\\z\n" --
-		else
-			return hex_formatted
-		end
+		local hf = hex_format(char)
+		
+		return (col_number == 0 and (hf.."\\z\n")) or hf
 	end))
 end
 
