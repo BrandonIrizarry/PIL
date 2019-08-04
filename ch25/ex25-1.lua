@@ -9,14 +9,24 @@ function getvarvalue (name, level, isenv, co)
 	local value
 	local found = false
 	
-	level = (level or 1) + 1
 	
-	-- try local variables
+	level = (level or 1) + 1
+
+	local diff = isenv and 2 or 1
+
+	--	print"try local variables"
 	for i = 1, math.huge do
-		local n, v = co and debug.getlocal(co, 1, i) or debug.getlocal(level, i)
+		local n, v
+		
+		if co then
+			n,v = debug.getlocal(co, level - diff, i)
+		else
+			n,v = debug.getlocal(level, i)
+		end
+		
 		if not n then break end
+		
 		if n == name then
-			print(n)
 			value = v
 			found = true
 		end
@@ -24,8 +34,8 @@ function getvarvalue (name, level, isenv, co)
 	
 	if found then return "local", value end
 	
-	-- try non-local variables
-	local func = co and debug.getinfo(co, 1, "f").func or debug.getinfo(level, "f").func
+	--print"try non-local variables"
+	local func = co and debug.getinfo(co, level - diff, "f").func or debug.getinfo(level, "f").func
 	
 	for i = 1, math.huge do
 		local n, v = debug.getupvalue(func, i)
@@ -35,33 +45,55 @@ function getvarvalue (name, level, isenv, co)
 	
 	if isenv then return false end -- avoid loop
 	
-	-- not found; get value from the environment
+--	print"not found; get value from the environment"
 	local _, env = getvarvalue("_ENV", level, true, co)
 	if env then
-		return "global", env[name]
-	else	-- no _ENV variable
-		return "noenv"
+		-- "strict" won't let us access an undeclared 'name' in _ENV, so...
+		local status, result = pcall(function () return env[name] end)
+		if status then 
+			return "global", env[name]
+		else
+			return string.format("'%s' not declared", name)
+		end
+	else
+		return "no env variable"
 	end
 end
 
+a = 5
+c = nil -- 'nil', but the explicit declaration makes this test fall through ('b' will fail, though)
 
-function printer (input)
-	local message = "Current number: "
-	print(message..input)
+local uv = 15
+local vw = 21
+
+function message (x)
+	a = a - 1
+	local x = vw
+	coroutine.yield(x)
 end
-
 
 function print_many ()
-	local x = 10
-	
-	for i = 1, 5 do
-		printer(i)
-		coroutine.yield(i)
-	end
+	a = a - 1
+	local x = uv 
+	coroutine.yield()
+	message()
 end
 
 co = coroutine.create(print_many)
 
 coroutine.resume(co)
-print(debug.getlocal(co, 1, 1))
+
 print(getvarvalue("x", 1, false, co))
+print(getvarvalue("a", 1, false, co))
+
+coroutine.resume(co)
+print(getvarvalue("x", 1, false, co))
+print(getvarvalue("x", 2, false, co))
+print(getvarvalue("uv", 2, false, co))
+print(getvarvalue("vw", 1, false, co))
+print(getvarvalue("a", 1, false))
+print(getvarvalue("b", 1, false))
+print(getvarvalue("c", 1, false))
+print(getvarvalue("a", 1, false, co))
+
+print(getvarvalue("a", 2, false, co))
