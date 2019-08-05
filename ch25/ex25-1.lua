@@ -9,7 +9,6 @@ function getvarvalue (name, level, isenv, co)
 	local value
 	local found = false
 	
-	
 	level = (level or 1) + 1
 
 	local diff = isenv and 2 or 1
@@ -97,3 +96,20 @@ print(getvarvalue("c", 1, false))
 print(getvarvalue("a", 1, false, co))
 
 print(getvarvalue("a", 2, false, co))
+
+--[[
+t = {x = 12}
+print(getvarvalue(x))
+]]
+
+print("\nAnother set of tests!")
+local print = print
+local getvarvalue = getvarvalue
+function foo (_ENV, a)
+	print(a + b)
+	print("This should be your answer: ", _ENV.b)
+	print(getvarvalue("b"))
+end  -- _ENV is local, so to find such an _ENV, you need to scan for local variables.
+
+
+foo({b = 14}, 12)
