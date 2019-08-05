@@ -48,6 +48,7 @@ function getvarvalue (name, level, isenv, co)
 	local _, env = getvarvalue("_ENV", level, true, co)
 	if env then
 		-- "strict" won't let us access an undeclared 'name' in _ENV, so...
+		-- NB: This works when "strict" isn't set, too.
 		local status, result = pcall(function () return env[name] end)
 		if status then 
 			return "global", env[name]
@@ -74,6 +75,7 @@ end
 function print_many ()
 	a = a - 1
 	local x = uv 
+	local x = vw
 	coroutine.yield()
 	message()
 end
