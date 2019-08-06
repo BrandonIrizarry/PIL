@@ -6,8 +6,6 @@
 ]]
 
 function getvarvalue (varname, level, co)
-	local value
-
 	level = level or 1
 	
 	local vartype, varvalue
@@ -33,9 +31,9 @@ function getvarvalue (varname, level, co)
 			end
 		end
 	
+		-- try non-local variables
 		local func = co and debug.getinfo(co, level, "f").func or debug.getinfo(level + 1, "f").func
 		
-		-- try non-local variables
 		for i = 1, math.huge do
 			local name, value = debug.getupvalue(func, i)
 			if not name then break end
