@@ -5,58 +5,66 @@
 (like the functions from the debug library.
 ]]
 
-function getvarvalue (name, level, isenv, co)
+function getvarvalue (varname, level, co)
 	local value
-	local found = false
-	
-	level = (level or 1) + 1
 
-	local diff = isenv and 2 or 1
-
-	--	print"try local variables"
-	for i = 1, math.huge do
-		local n, v
+	level = level or 1
+	
+	local vartype, varvalue
+	local isenv = 0
+	
+	local search_name = varname 
+	
+	while isenv < 2 do
 		
-		if co then
-			n,v = debug.getlocal(co, level - diff, i)
-		else
-			n,v = debug.getlocal(level, i)
+		-- try local variables
+		for i = 1, math.huge do
+			local name, value
+			
+			if co then
+				name, value = debug.getlocal(co, level, i)
+			else
+				name, value = debug.getlocal(level + 1, i)
+			end
+			
+			if not name then break end
+			if name == search_name then
+				vartype, varvalue = "local", value 
+			end
 		end
+	
+		local func = co and debug.getinfo(co, level, "f").func or debug.getinfo(level + 1, "f").func
 		
-		if not n then break end
-		
-		if n == name then
-			value = v
-			found = true
+		-- try non-local variables
+		for i = 1, math.huge do
+			local name, value = debug.getupvalue(func, i)
+			if not name then break end
+			if name == search_name then 
+				vartype, varvalue = "upvalue", value 
+			end
 		end
+	
+		if vartype then break end -- both vartype and varvalue are set
+		
+		-- not found; get value from the environment
+		search_name = "_ENV"
+		isenv = isenv + 1
 	end
-	
-	if found then return "local", value end
-	
-	--print"try non-local variables"
-	local func = co and debug.getinfo(co, level - diff, "f").func or debug.getinfo(level, "f").func
-	
-	for i = 1, math.huge do
-		local n, v = debug.getupvalue(func, i)
-		if not n then break end
-		if n == name then return "upvalue", v end
-	end
-	
-	if isenv then return false end -- avoid loop
-	
---	print"not found; get value from the environment"
-	local _, env = getvarvalue("_ENV", level, true, co)
-	if env then
-		-- "strict" won't let us access an undeclared 'name' in _ENV, so...
-		-- NB: This works when "strict" isn't set, too.
-		local status, result = pcall(function () return env[name] end)
-		if status then 
-			return "global", env[name]
-		else
-			return string.format("'%s' not declared", name)
+		
+	if isenv == 0 then
+		return vartype, varvalue
+	elseif isenv == 1 then
+		local status, result = pcall(function () return varvalue[varname] end)
+		
+		if status then
+			return "global", result
 		end
-	else
+		
+		return string.format("'%s' not declared", varname)
+	elseif isenv == 2 then
 		return "no env variable"
+	else
+		error("invalid value for 'isenv'")
 	end
 end
 
@@ -84,25 +92,26 @@ co = coroutine.create(print_many)
 
 coroutine.resume(co)
 
-print(getvarvalue("x", 1, false, co))
-print(getvarvalue("a", 1, false, co))
+function test_instance(varname, tshould, vshould, level, co)
+	local vartype, varvalue = getvarvalue(varname, level, co)
+	assert((vartype == tshould) and (varvalue == vshould))
+	print(vartype, varvalue)
+end
+
+test_instance("x", "local", 21, 1, co)
+test_instance("a", "global", 4, 1, co)
 
 coroutine.resume(co)
-print(getvarvalue("x", 1, false, co))
-print(getvarvalue("x", 2, false, co))
-print(getvarvalue("uv", 2, false, co))
-print(getvarvalue("vw", 1, false, co))
-print(getvarvalue("a", 1, false))
-print(getvarvalue("b", 1, false))
-print(getvarvalue("c", 1, false))
-print(getvarvalue("a", 1, false, co))
+print(getvarvalue("x", 1, co))
+print(getvarvalue("x", 2, co))
+print(getvarvalue("uv", 2, co))
+print(getvarvalue("vw", 1, co))
+print(getvarvalue("a", 1))
+print(getvarvalue("b", 1)) -- should say, "not declared"
+print(getvarvalue("c", 1))
+print(getvarvalue("a", 1, co))
 
-print(getvarvalue("a", 2, false, co))
-
---[[
-t = {x = 12}
-print(getvarvalue(x))
-]]
+print(getvarvalue("a", 2, co))
 
 print("\nAnother set of tests!")
 local print = print
@@ -115,3 +124,10 @@ end  -- _ENV is local, so to find such an _ENV, you need to scan for local varia
 
 
 foo({b = 14}, 12)
+
+print("\nAnother set of tests!")
+function bottom ()
+	--print(get_var_type("x", 2))
+	coroutine.yield()
+end
+
