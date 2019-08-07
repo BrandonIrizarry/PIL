@@ -58,9 +58,9 @@ function getvarvalue (varname, level, co)
 			return "global", result
 		end
 		
-		return string.format("'%s' not declared", varname)
+		return "error", string.format("'%s' not declared", varname)
 	elseif isenv == 2 then
-		return "no env variable"
+		return "error", "no env variable"
 	else
 		error("invalid value for 'isenv'")
 	end
@@ -78,10 +78,21 @@ function message (x)
 	coroutine.yield(x)
 end
 
+
+function test_instance(varname, tshould, vshould, level, co)
+	if not co then
+		level = level + 1
+	end
+	
+	local vartype, varvalue = getvarvalue(varname, level, co)
+	print(vartype, varvalue)
+end
+
 function print_many ()
 	a = a - 1
 	local x = uv 
 	local x = vw
+	test_instance("x", "local", 21, 1)
 	coroutine.yield()
 	message()
 end
@@ -90,11 +101,6 @@ co = coroutine.create(print_many)
 
 coroutine.resume(co)
 
-function test_instance(varname, tshould, vshould, level, co)
-	local vartype, varvalue = getvarvalue(varname, level, co)
-	assert((vartype == tshould) and (varvalue == vshould))
-	print(vartype, varvalue)
-end
 
 test_instance("x", "local", 21, 1, co)
 test_instance("a", "global", 4, 1, co)
@@ -104,8 +110,10 @@ print(getvarvalue("x", 1, co))
 print(getvarvalue("x", 2, co))
 print(getvarvalue("uv", 2, co))
 print(getvarvalue("vw", 1, co))
-print(getvarvalue("a", 1))
-print(getvarvalue("b", 1)) -- should say, "not declared"
+--print(getvarvalue("a", 1))
+test_instance("a", "global", 3, 1)
+--print(getvarvalue("b", 1)) -- should say, "not declared"
+test_instance("b", "error", "'b' not declared", 1)
 print(getvarvalue("c", 1))
 print(getvarvalue("a", 1, co))
 
@@ -128,4 +136,6 @@ function bottom ()
 	--print(get_var_type("x", 2))
 	coroutine.yield()
 end
+
+return getvarvalue
 
