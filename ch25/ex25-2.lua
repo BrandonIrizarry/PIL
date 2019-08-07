@@ -3,10 +3,6 @@
 	
 	Write a function 'setvarvalue' similar to 'getvarvalue'
 (Listing 25.1).
-
-tbc - we can't return directly in the loops, since we must always allow the possibility 
-an _ENV search, as we did in ex25-1. we have to set some "star variables", and check on
-them after the loop finishes, based on the value of 'isenv' (again, as before).
 ]]
 
 function setvarvalue (varname, varvalue, level, co)
@@ -14,61 +10,12 @@ function setvarvalue (varname, varvalue, level, co)
 	
 	local isenv = 0
 	local search_name = varname
-	
-	while isenv < 2
-		-- try local variables
-		for i = 1, math.huge do
-			local name
-			
-			if co then
-				name = debug.getlocal(co, level, i)
-				if not name then break
-				if name == search_name then
-					debug.setlocal(co, level, i, varvalue)
-					return
-				end
-			else
-				name = debug.getlocal(level + 1, i)
-				if not name then break
-				if name == search_name then
-					debug.setlocal(level, i, varvalue)
-					return
-				end
-			end
-		end
-		
-		-- try non-local variables
-		local func = co and debug.getinfo(co, level, "f").func or debug.getinfo(level + 1, "f").func
-		
-		for i = 1, math.huge do
-			local name = debug.getupvalue(func, i)
-			if not name then break end
-			if name == search_name then 
-				debug.setupvalue(func, i, varvalue)
-				return
-			end
-		end
-		
-		search_name = "_ENV"
-		isenv = isenv + 1
-	end
-
-	
-end
-
-
---[[
-function getvarvalue (varname, level, co)
-	level = level or 1
-	
-	local vartype, varvalue
-	local isenv = 0
-	
-	local search_name = varname 
-	
+	local vartype, varidx, func
+	local env -- make indexing _ENV easier when setting globals
 	
 	while isenv < 2 do
-		-- try local variables
+		--print(isenv)
+		--print"try local variables"
 		for i = 1, math.huge do
 			local name, value
 			
@@ -79,43 +26,77 @@ function getvarvalue (varname, level, co)
 			end
 			
 			if not name then break end
+			if name == "_ENV" then env = value end
+			
 			if name == search_name then
-				vartype, varvalue = "local", value 
+				vartype, varidx = "local", i
 			end
 		end
-	
-		local func = co and debug.getinfo(co, level, "f").func or debug.getinfo(level + 1, "f").func
 		
-		-- try non-local variables
+		--print"try non-local variables"
+		func = co and debug.getinfo(co, level, "f").func or debug.getinfo(level + 1, "f").func
+		
 		for i = 1, math.huge do
 			local name, value = debug.getupvalue(func, i)
 			if not name then break end
+			if name == "_ENV" then env = value end
 			if name == search_name then 
-				vartype, varvalue = "upvalue", value 
+				vartype, varidx = "upvalue", i
 			end
 		end
-	
-		if vartype then break end -- both vartype and varvalue are set
 		
-		-- not found; get value from the environment
+		if vartype then break end 
 		search_name = "_ENV"
 		isenv = isenv + 1
 	end
-		
+
 	if isenv == 0 then
-		return vartype, varvalue
-	elseif isenv == 1 then
-		local status, result = pcall(function () return varvalue[varname] end)
-		
-		if status then
-			return "global", result
+		if vartype == "local" then
+			if co then
+				return debug.setlocal(co, level, varidx, varvalue)
+			end
+			
+			return debug.setlocal(level + 1, varidx, varvalue)
+		elseif vartype == "upvalue" then
+			return debug.setupvalue(func, varidx, varvalue)
+		else
+			error(string.format("Invalid type '%s' on first spin", vartype))
+		end
+	elseif isenv == 1 then -- env should be _ENV
+		local status, result = pcall(function () env[varname] = varvalue end)
+		if not status then
+			return string.format("'%s' not declared", varname)
 		end
 		
-		return string.format("'%s' not declared", varname)
+		return varname
 	elseif isenv == 2 then
 		return "no env variable"
 	else
 		error("invalid value for 'isenv'")
 	end
 end
-]]
+
+local getvarvalue = require("ex25-1")
+
+function test_instance(varname, varvalue, level, co)
+	if not co then
+		level = level + 1
+	end
+	
+	setvarvalue(varname, varvalue, level, co)
+	local _type, _value = getvarvalue(varname, level, co)
+	assert(_value == varvalue)
+	print(_value)
+end
+
+a = "foo"
+
+local uv = 0
+function test ()
+	local x = uv
+	test_instance("x", -1, 1)
+	test_instance("uv", -2, 1)
+	test_instance("a", "bar", 1)
+end
+
+test()
