@@ -23,38 +23,66 @@ function next_local (co, level)
 	return level, locals
 end
 
-function locals (co)
-	return next_local, co, 0
+-- 'flevel' is an offset for functions that call 'locals' to 
+-- inspect a regular function's variables (from the inside).
+function locals (co, flevel)
+	return next_local, co, flevel or 0
 end
 
 local nice = "foo"
 
-function print_locals ()
-	for level, ltable in locals() do
-		print(level)
+--[[
+function print_locals (co)
+	local slevel = 1
 	
+	for level, ltable in locals(co, slevel) do
+		print("LEVEL: ", level - slevel)
+
 		for _, row in ipairs(ltable) do
 			print(row.name, row.value)
 		end
 	end
+	
+	print()
+end
+--]]
+
+function tlocals (co)
+	local slevel = 1
+	local tl = {}
+	
+	for level, ltable in locals(co, slevel) do
+		tl[level - slevel] = ltable
+	end
+	
+	return tl
 end
 
 function test ()
 	local x = 1
 	local y = 2
 	local z = 3
+
+	local tl = tlocals()
 	
+	for _, set in ipairs(tl) do
+		for i,row in ipairs(set) do
+			print(i,row.name, row.value)
+		end
+	end
+
+	--print_locals()
 	--[[
-	for level, ltable in locals() do
-		print(level)
-	
+	--local idx = 1
+	for level, ltable in locals(nil, 2) do
+		print("LEVEL: ", level)	
 		for _, row in ipairs(ltable) do
 			print(row.name, row.value)
 		end
+		--main_lt[idx] = ltable
 	end
-	--]]
-	print_locals() -- if you're going to use this, you may have to pass 'level' as a parameter, tbc.
 	print()
+	--]]
 end
 
 function second_trip ()
@@ -84,3 +112,8 @@ end
 
 -- wow!  tbc - finish for upvalues, adapt for coroutines, see if you can use this to
 -- solve ex25-3.
+-- you could, if you wanted to, write an iterator that already accumulated values into a table, into
+-- its "invariant state". You could write a simple mock iterator to try this out, e.g. to accumulate
+-- a range of numbers into a table... but the table would be always returned on each loop. - good idea???
+-- also, you could wrap ltable in an object, such that you could do 
+-- for name, value in ltable:entries() do ...
