@@ -66,6 +66,7 @@ function getvarvalue (varname, level, co)
 	end
 end
 
+--[=[
 a = 5
 c = nil -- 'nil', but the explicit declaration makes this test fall through ('b' will fail, though)
 
@@ -136,6 +137,7 @@ function bottom ()
 	--print(get_var_type("x", 2))
 	coroutine.yield()
 end
+--]=]
 
 return getvarvalue
 
