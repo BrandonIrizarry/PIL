@@ -13,8 +13,8 @@ but the 'level' control variable (here omitted using '_') still starts
 with the level as seen by Lua (e.g., 2 instead of 1).
 ]]
 
-local locals = require "examples.local_it"
-local upvalues = require "examples.upvalue_it"
+local locals = require "modules.local_it"
+local upvalues = require "modules.upvalue_it"
 
 return function (co, flevel)
 	local flevel = (co and 0) or flevel
