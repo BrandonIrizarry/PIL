@@ -5,7 +5,7 @@
 (Listing 25.1).
 ]]
 
-function setvarvalue (varname, varvalue, level, co)
+local function setvarvalue (varname, varvalue, level, co)
 	level = level or 1
 	
 	local isenv = 0
@@ -76,6 +76,7 @@ function setvarvalue (varname, varvalue, level, co)
 	end
 end
 
+--[[
 local getvarvalue = require("ex25-1")
 
 function test_instance(varname, varvalue, level, co)
@@ -100,3 +101,6 @@ function test ()
 end
 
 test()
+]]
+
+return setvarvalue

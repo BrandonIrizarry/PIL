@@ -1,4 +1,4 @@
-local debug_lex = require "ex25-4"
+local debug_lex = require "ex25-5"
 
 local nice = "I am a nice upvalue."
 
@@ -8,11 +8,13 @@ function test ()
 	local z = 2
 	local w = nice
 	
-	--debug.debug() -- show the difference
 	debug_lex(nil, "flevel_debug")
-	--debug_lex(nil, "flevel_debug_pt2") -- prove that updates aren't persistent
+	--debug_lex(nil, "flevel_debug_pt2")
 end
 
+--test()
+
+---[=[
 function cave ()
 	local inside = "inside the cave"
 	coroutine.yield()
@@ -24,10 +26,9 @@ function spelunker ()
 	cave()
 end
 
-test()
-
 co = coroutine.create(spelunker)
 
 coroutine.resume(co)
 
 debug_lex(co, "coroutine_debug")
+--]=]

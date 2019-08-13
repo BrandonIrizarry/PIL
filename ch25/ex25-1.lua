@@ -5,7 +5,7 @@
 (like the functions from the debug library.
 ]]
 
-function getvarvalue (varname, level, co)
+local function getvarvalue (varname, level, co)
 	level = level or 1
 	
 	local vartype, varvalue

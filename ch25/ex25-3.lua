@@ -16,7 +16,7 @@ with the level as seen by Lua (e.g., 2 instead of 1).
 local locals = require "modules.local_it"
 local upvalues = require "modules.upvalue_it"
 
-return function (co, flevel)
+local function gvv (co, flevel)
 	local flevel = (co and 0) or flevel
 	local env -- for finding the _ENV to use with globals metatable
 	
@@ -49,3 +49,5 @@ return function (co, flevel)
 	
 	return result
 end
+
+return gvv
