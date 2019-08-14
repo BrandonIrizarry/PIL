@@ -10,29 +10,56 @@ in an empty environment and use the __index metamethod attached to the function
 local get_vt = require "ex25-3" -- 'getvarvalue', but compiles a table
 
 function debug_lex (chunk_name, co)
-	local vt = get_vt(co or 2)
+	local vt = get_vt(co or 3)
 
 	-- The current scope doesn't necessarily have an _ENV variable, and so
 	-- 'print' may not be available, so include it manually, to facilitate
 	-- inspection.
 	local env = setmetatable({print=print}, {__index = function (_, word)
-		-- Use "safe navigation" (see PIL 4, p.46)
-		return 
-			(vt.locals[word] or {}).value or 
-			(vt.upvalues[word] or {}).value or 
-			vt.globals[word] 		
+		return vt.locals[word] or vt.upvalues[word] or vt.globals[word] 		
 	end})
 		
+	chunk_name = chunk_name or "debug_lex"
+	
 	while true do
 		io.write(string.format("debug:%s> ", chunk_name))
 		local line = io.read()
-		if line == "cont" or line == nil then break end
+	
+		if line == nil then break end
 		
-		chunk_name = chunk_name or "debug_lex"
-		local prefix, suffix = "", ""
-		
+		local asterisk, command = line:match("(*?)(.*)")
+		if asterisk == "*" then
+			if command == "cont" then
+				break
+			elseif command == "see" then
+				print("\nlocals:")
+				for name, value in pairs(vt.locals) do
+					print(name, value)
+				end
+				print("\nupvalues:")
+				for name, value in pairs(vt.upvalues) do
+					print(name, value)
+				end
+				
+				io.write("\n")
+				goto continue
+			elseif command == "env" then
+				if vt.env then
+					for k,v in pairs(vt.env) do
+						print(k,v)
+					end
+					
+					io.write("\n")
+				end
+				goto continue
+			else
+				error("Invalid metacommand to debug REPL", 2)
+			end
+		end
+	
 		-- Allow for certain invalid chunks, for quick variable inspection.
 		-- Check for both compile- and runtime errors.
+		local prefix, suffix = "", ""
 		::try_again::
 		local f, err_msg = load(prefix..line..suffix, chunk_name, "t", env)
 		
@@ -46,6 +73,8 @@ function debug_lex (chunk_name, co)
 			suffix = ")"
 			goto try_again
 		end
+		
+		::continue::
 	end
 	
 	io.write("\n") -- make space for the next debug REPL

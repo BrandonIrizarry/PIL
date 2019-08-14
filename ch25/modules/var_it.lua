@@ -23,7 +23,7 @@ function M.locals (arg)
 		if type(arg) == "thread" then
 			name, value = debug.getlocal(arg, 1, idx)
 		elseif math.type(arg) == "integer" then
-			name, value = debug.getlocal(2 + arg, idx)
+			name, value = debug.getlocal(arg + 1, idx)
 		else
 			error("Invalid arg for 'locals' iterator", 2)
 		end
@@ -41,7 +41,7 @@ function M.upvalues (arg)
 		if type(arg) == "thread" then
 			func = debug.getinfo(arg, 1, "f").func
 		elseif math.type(arg) == "integer" then
-			func = debug.getinfo(2 + arg, "f").func
+			func = debug.getinfo(arg + 1, "f").func
 		else
 			error("Invalid arg for 'upvalues' iterator", 2)
 		end

@@ -12,8 +12,8 @@ do
 		print("Test 'foo', a function with _ENV passed as its first parameter")
 		local vt = get_vt()
 		
-		for name, value, index in pairs(vt.locals) do
-			print(name, value, index)
+		for name, value in pairs(vt.locals) do
+			print(name, value)
 		end
 		
 		print("This was included with local _ENV as a free reference:", vt.globals.b)
@@ -35,13 +35,13 @@ local function test ()
 	end
 	
 	print("\nSee locals:")
-	for n,v,i in pairs(vt.locals) do
-		print(n,v,i)
+	for n,v in pairs(vt.locals) do
+		print(n,v)
 	end
 
 	print("\nSee upvalues:")
-	for n,v,i in pairs(vt.upvalues) do
-		print(n,v,i)
+	for n,v in pairs(vt.upvalues) do
+		print(n,v)
 	end
 	
 	print("\n'pairs' is visible here:", vt.globals.pairs)
@@ -69,13 +69,13 @@ if status1 then
 	local vt_co = get_vt(co)
 
 	print("\nTest coroutine's locals.")
-	for name, value, idx in pairs(vt_co.locals) do
-		print(name, value, idx)
+	for name, value in pairs(vt_co.locals) do
+		print(name, value)
 	end
 
 	print("\nTest coroutine's upvalues.")
-	for name, value, idx in pairs(vt_co.upvalues) do
-		print(name, value, idx)
+	for name, value in pairs(vt_co.upvalues) do
+		print(name, value)
 	end
 else
 	print(result1) -- hopefully, an error message

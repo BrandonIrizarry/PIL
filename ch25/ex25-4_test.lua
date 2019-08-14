@@ -1,25 +1,28 @@
 local debug_lex = require "ex25-4"
 
 local nice = "I am a nice upvalue."
+local a = 9
 
-function test ()
-	local x = 0
-	local y = 1
-	local z = 2
-	local w = nice
-	
+local function test ()
+	local x, y, z, w, q = 0, 1, 2, nice, a
 	debug_lex("flevel_debug")
 end
 
 test()
 
+local function test2 ()
+	print("We've got _ENV here now.")
+	debug_lex("flevel_test2")
+end
 
-function cave ()
+test2()
+
+local function cave ()
 	local inside = "inside the cave"
 	coroutine.yield()
 end
 
-function spelunker ()
+local function spelunker ()
 	local top = "just outside the cave"
 	coroutine.yield()
 	cave()

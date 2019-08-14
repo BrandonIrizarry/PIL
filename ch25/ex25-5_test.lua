@@ -2,24 +2,21 @@ local debug_lex = require "ex25-5"
 
 local nice = "I am a nice upvalue."
 
-
--- This is tricky - this function actually has no _ENV variable in it,
--- so when using getvarvalue (ex25-1) for a particular level, it won't find 'print'
--- here, and so will fail! If I declare a global 'a' just above here, and use it
--- in 'test', _then_ we've given 'test' an '_ENV', and then 'print' will work.
+a = 9
 function test ()
-	local x = 0
-	local y = 1
-	local z = 2
+	local x, y, z = 0, 1, 2
 	local w = nice
+	local q = a
 	
-	debug_lex(nil, "flevel_debug")
-	--debug_lex(nil, "flevel_debug_pt2")
+	debug_lex("flevel_debug")
+	debug_lex("fd_confirm_changes")
 end
 
 test()
 
---[=[
+debug_lex("fd_check_global")
+
+--[[
 function cave ()
 	local inside = "inside the cave"
 	coroutine.yield()
@@ -31,9 +28,14 @@ function spelunker ()
 	cave()
 end
 
-co = coroutine.create(spelunker)
 
-coroutine.resume(co)
+local co = coroutine.create(spelunker)
 
-debug_lex(co, "coroutine_debug")
---]=]
+local status1, result1 = coroutine.resume(co)
+
+if status1 then
+	debug_lex("coroutine_debug", co)
+else
+	print(result1)
+end
+]]

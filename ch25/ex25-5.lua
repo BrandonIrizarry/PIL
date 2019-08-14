@@ -4,96 +4,93 @@
 	Improve the previous exercise to handle updates, too.
 ]]
 
--- tbc we have to call the original debug set functions to do what we want.
--- won't be too hard, but for that we need to track writes to E, meaning
--- that we'll need to set it up as a proxy table. But E starts out as empty,
--- so that shouldn't be too hard, you just attach __newindex to the metatable.
--- hm, but you should allow multiple writes (as __newindex isn't triggered on
--- existing keys), so E has to then stay empty. Read that part about proxy
--- tables, then. track. tbc.
+local get_vt = require "ex25-3" -- 'getvarvalue', but compiles a table
+--local getvarvalue = require "ex25-1"
+local setvarvalue = require "ex25-2"
 
-local gvv = require "ex25-3" -- 'getvarvalue', but compiles a table
-local locals = require "modules.local_it"
- 
-function debug_lex (co, chunk_name)
-	local var_t = gvv(co, 2)
-	
-	local env = {} -- for 'load'
-	
-	-- NB: We're only looking at variables in the current scope, that is, level 1.
+--local locals, upvalues = require("modules.var_it").locals, require("modules.var_it").upvalues
+function debug_lex (chunk_name, co)
+	local vt = get_vt(co or 3)
+
+	-- The current scope doesn't necessarily have an _ENV variable, and so
+	-- 'print' may not be available, so include it manually, to facilitate
+	-- inspection.
 	local read_write = {
 		__index = function (_, word)
-			return var_t.locals[1][word] or var_t.upvalues[1][word] or var_t.globals[word]
+			return vt.locals[word] or vt.upvalues[word] or vt.globals[word]
 		end,
 		
-	--	__newindex = function (_, word, value)
-		--[[
-			-- prototype joint for ordinary functions ("test")
-			-- you have to both call "setlocal", and update var_t as well, 
-			-- so that your __index metamethod works properly.
-			-- you're going to need to save the index info somehow in var_t, 
-			-- perhaps revert to the original implementation - or use a dual
-			-- representation for the iterator modules. tbc.
-			debug.setlocal(4, 1, "foo")
-			var_t.locals[1]["x"] = "foo"
-
-			for l, lt in locals(nil, 3) do
-				print("LEVEL: ", l - 3, lt)
-				for name, value in pairs(lt) do
-					print(name, value)
-				end
-			end
-		end
-		]]
-		
-		--[[
-			--prototype joint for coroutines ("spelunker")
-			-- moral of the story: associate variables with their indices.
-			debug.setlocal(co, 1, 1, "bottom")
-			var_t.locals[1]["top"] = "bottom"
+		__newindex = function (_, word, value)
+			print("triggered __newindex")
+			-- NB: globals in vt are automatically handled, thanks to inheritance.
+			setvarvalue(word, value, 5) -- for "why 5?", see prev. exercise.
 			
-			for l, lt in locals(co) do
-				print("LEVEL: ", l)
-				for name, value in pairs(lt) do
-					print(name, value)
-				end
+			if vt.locals[word] then
+				vt.locals[word] = value
+			elseif vt.upvalues[word] then
+				vt.upvalues[word] = value
+			else
+				error("Assignment to nonexistent variable", 2)
 			end
 		end,
-			-- for 'local' iterator with a co, you don't need a level parameter.
-			-- 
-		]]
 	}
 	
-	setmetatable(env, read_write)
-
-
-	--[[
-	local env = setmetatable(redirect, {__index = function (_, word)
-		return var_t.locals[1][word] or var_t.upvalues[1][word] or var_t.globals[word]
-	end})
-	]]
+	local env = setmetatable({print=print}, read_write)
+	chunk_name = chunk_name or "debug_lex"
 		
 	while true do
 		io.write(string.format("debug:%s> ", chunk_name))
 		local line = io.read()
-		if line == "cont" or line == nil then break end
+		if line == nil then break end
 		
-		chunk_name = chunk_name or "debug_lex"
-		local prefix, suffix = "", ""
+		local asterisk, command = line:match("(*?)(.*)")
+		if asterisk == "*" then
+			if command == "cont" then
+				break
+			elseif command == "see" then
+				print("\nlocals:")
+				for name, value in pairs(vt.locals) do
+					print(name, value)
+				end
+				print("\nupvalues:")
+				for name, value in pairs(vt.upvalues) do
+					print(name, value)
+				end
+				
+				io.write("\n")
+				goto continue
+			elseif command == "env" then
+				if vt.env then
+					for k,v in pairs(vt.env) do
+						print(k,v)
+					end
+					
+					io.write("\n")
+				end
+				goto continue
+			else
+				error("Invalid metacommand to debug REPL", 2)
+			end
+		end
 		
 		-- Allow for certain invalid chunks, for quick variable inspection.
+		-- Check for both compile- and runtime errors.
+		local prefix, suffix = "", ""
 		::try_again::
 		local f, err_msg = load(prefix..line..suffix, chunk_name, "t", env)
 		
 		if f then -- no syntax errors
-			f() 
+			local status, result = pcall(f) -- catch runtime errors
+			if not status then print(result) end
 		elseif prefix ~= "" then
-			io.write(err_msg, "\n") 
+			print(err_msg) 
 		else
 			prefix = "print("
 			suffix = ")"
 			goto try_again
 		end
+		
+		::continue::
 	end
 	
 	io.write("\n") -- make space for the next debug REPL

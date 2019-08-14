@@ -7,12 +7,12 @@ local function test ()
 	local x, y, z = 0, 1, 2
 	
 	print("Locals (regular function)")
-	for idx, name, value in locals(0) do
+	for idx, name, value in locals(1) do
 		print(idx, name, value)
 	end
 	
 	print("Upvalues (regular function)")
-	for idx, name, value in upvalues(0) do
+	for idx, name, value in upvalues(1) do
 		print(idx, name, value)
 	end
 end
