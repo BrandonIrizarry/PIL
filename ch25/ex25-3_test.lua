@@ -1,56 +1,84 @@
-local t_all = require "ex25-3"
-local x = "the higher version of x"
+local get_vt = require "ex25-3"
 
-local nice = "foo"
+-- This has to be in its own scope, or else references to 'pairs' and 'print' 
+-- later on in this test-suite bafflingly don't trigger a reference to an _ENV table.
+do
+	local print = print
+	local pairs = pairs
+	local next = next
+	local get_vt = get_vt
 
-MESSAGE	= "I can be seen"
-
-print("\nAnother set of tests!")
-local print = print
-local pairs = pairs
-local t_all = t_all
-function foo (_ENV, a)
-	print(a + b)
-	print("This should be your answer: ", _ENV.b)
-	local r = t_all()
-	for k,v in pairs(r.locals) do
-		print(k,v) 
+	local function foo (_ENV, a)
+		print("Test 'foo', a function with _ENV passed as its first parameter")
+		local vt = get_vt()
+		
+		for name, value, index in pairs(vt.locals) do
+			print(name, value, index)
+		end
+		
+		print("This was included with local _ENV as a free reference:", vt.globals.b)
 	end
-	print(r.globals.b)
-end  -- _ENV is local, so to find such an _ENV, you need to scan for local variables.
 
 
-foo({b = 14}, 12)
-
---print("\nEnd those tests")
-
-function test ()
-	local x = 1
-	local y = 2
-	local z = 3
-
-	local r = t_all()
-	print(r.globals.MESSAGE)
+	foo({b = 14}, 12)
 end
 
-function second_trip ()
+local function test ()
+	print("\nTest a second, non-coroutine function.")
+	local x, y, z = 0, 1, 2
+	
+	local vt = get_vt()
+		
+	print("\nSee globals:")
+	for k,v in pairs(vt.globals) do
+		print(k,v)
+	end
+	
+	print("\nSee locals:")
+	for n,v,i in pairs(vt.locals) do
+		print(n,v,i)
+	end
+
+	print("\nSee upvalues:")
+	for n,v,i in pairs(vt.upvalues) do
+		print(n,v,i)
+	end
+	
+	print("\n'pairs' is visible here:", vt.globals.pairs)
+end
+
+test()
+
+local function second_trip ()
 	local h = "baytown"
 	
 	coroutine.yield()
 end
 
-function travel ()
+local function travel ()
 	local x = 0
-	local w = nice
-	second_trip ()
+	second_trip()
 end
 
-test()
-co = coroutine.create(travel)
+local co = coroutine.create(travel)
 
-coroutine.resume(co)
+-- Now we really have to watch out for this, b/c of "strict.lua"!
+local status1, result1 = coroutine.resume(co)
+ 
+if status1 then
+	local vt_co = get_vt(co)
 
-local s = t_all(co)
+	print("\nTest coroutine's locals.")
+	for name, value, idx in pairs(vt_co.locals) do
+		print(name, value, idx)
+	end
 
-print(s.locals[1].h)
-print(s.upvalues[2].nice)
+	print("\nTest coroutine's upvalues.")
+	for name, value, idx in pairs(vt_co.upvalues) do
+		print(name, value, idx)
+	end
+else
+	print(result1) -- hopefully, an error message
+end
+
+

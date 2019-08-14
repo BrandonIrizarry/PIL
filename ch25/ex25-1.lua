@@ -60,6 +60,7 @@ local function getvarvalue (varname, level, co)
 		
 		return "error", string.format("'%s' not declared", varname)
 	elseif isenv == 2 then
+		print("here: varname, level", varname, level)
 		return "error", "no env variable"
 	else
 		error("invalid value for 'isenv'")

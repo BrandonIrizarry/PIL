@@ -22,7 +22,7 @@ local function next_local (co, level)
 		
 		if not name then break end
 		name = (name == "(*temporary)") and idx or name
-		locals[name] = value
+		locals[name] = {value, idx}
 	end
 	
 	return level, locals

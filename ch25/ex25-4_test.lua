@@ -8,10 +8,11 @@ function test ()
 	local z = 2
 	local w = nice
 	
-	--debug.debug() -- show the difference
-	debug_lex(nil, "flevel_debug")
-	--debug_lex(nil, "flevel_debug_pt2") -- prove that updates aren't persistent
+	debug_lex("flevel_debug")
 end
+
+test()
+
 
 function cave ()
 	local inside = "inside the cave"
@@ -24,10 +25,13 @@ function spelunker ()
 	cave()
 end
 
-test()
 
-co = coroutine.create(spelunker)
+local co = coroutine.create(spelunker)
 
-coroutine.resume(co)
+local status1, result1 = coroutine.resume(co)
 
-debug_lex(co, "coroutine_debug")
+if status1 then
+	debug_lex("coroutine_debug", co)
+else
+	print(result1)
+end

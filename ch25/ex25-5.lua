@@ -14,8 +14,7 @@
 
 local gvv = require "ex25-3" -- 'getvarvalue', but compiles a table
 local locals = require "modules.local_it"
---local setvarvalue = require "ex25-2"
-
+ 
 function debug_lex (co, chunk_name)
 	local var_t = gvv(co, 2)
 	
@@ -27,7 +26,7 @@ function debug_lex (co, chunk_name)
 			return var_t.locals[1][word] or var_t.upvalues[1][word] or var_t.globals[word]
 		end,
 		
-		__newindex = function (_, word, value)
+	--	__newindex = function (_, word, value)
 		--[[
 			-- prototype joint for ordinary functions ("test")
 			-- you have to both call "setlocal", and update var_t as well, 

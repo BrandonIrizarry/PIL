@@ -19,12 +19,7 @@ local function next_upvalue (co, level)
 	for idx = 1, math.huge do
 		local name, value = debug.getupvalue(func, idx)
 		if not name then break end	
-		upvalues[name] = value
-		--[[
-		upvalues[idx] = {}
-		upvalues[idx].name = name
-		upvalues[idx].value = value
-		]]
+		upvalues[name] = {value, idx}
 	end
 	
 	return level, upvalues
@@ -35,21 +30,5 @@ end
 local function upvalues (co, flevel)
 	return next_upvalue, co, flevel or 0
 end
-
-
--- The main function - return a table of all the upvalues,
--- according to a certain format.
---[[
-local function tupvalues (co, flevel)
-    local flevel = (co and 0) or flevel or 1  
-	local tu = {}
-	
-	for level, utable in upvalues(co, flevel) do
-		tu[level - flevel] = utable
-	end
-	
-	return tu
-end
---]]
 
 return upvalues
