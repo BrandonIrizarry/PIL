@@ -4,6 +4,12 @@
 	Generalize the Markov-chain algorithm so that it can use any size
 for the sequence of previous words used in the choice of the next word.
 ]]
+
+if not arg[1] then
+	print("Usage: prefix_length filename")
+	return 
+end
+
 math.randomseed(os.time())
 
 local PREFIX_LENGTH = arg[1]
