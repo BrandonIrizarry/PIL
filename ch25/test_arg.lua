@@ -1,0 +1,1 @@
+print(arg[1] or "no arg[1]", arg[2] or "no arg[2]")
