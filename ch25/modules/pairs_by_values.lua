@@ -44,7 +44,5 @@ local function test ()
 	end
 end
 
---test()
-
 return pairs_by_values
 
