@@ -31,41 +31,20 @@ local function hook ()
 end
 
 
-local function derive_message (func)
+local function derive_message (count, func)
 	local name_info = Names[func]
-	
-	local what, name, namewhat = name_info.what, name_info.name, name_info.namewhat
-	
-	if what == "C" then
-		if (name == nil) or namewhat == nil then return end
 		
-		return string.format("%10s (%10s, C function)", name, namewhat)
+	local base = string.format("%-15d%-20s%-15s%-5s", count, name_info.name, name_info.namewhat, 
+			name_info.what)
+	
+	if name_info.what == "C" then
+		if (name_info.name == nil) or (name_info.namewhat == nil) then return end
+		return base
 	end
-	
-	local source, short_src = name_info.source, name_info.short_src
-	local pretty_src = source
-	
-	if source:sub(1,1) ~= "@" then -- 'source' is possibly quite long
-		pretty_src = short_src
-	end
-		
-	--[[
-	if what == "main" then
-		local msg
-		
-		if name then
-			return string.format("main:%s, %10s", name, pretty_src)
-		end
-		
-		return string.format("main, %10s", pretty_src)
-	end
-	]]
-	
-	local linedefined, lastlinedefined = name_info.linedefined, name_info.lastlinedefined
-	
-	if what == "Lua" then
-		return string.format("%10s (%10s, %10s, %10s, %4d-%4d)",
-			name, namewhat, "Lua function", pretty_src, linedefined, lastlinedefined)
+
+	if name_info.what == "Lua" then
+		local _lines = string.format("%d,%d", name_info.linedefined, name_info.lastlinedefined)
+		return base..string.format("%30s", _lines..name_info.source)
 	end
 end
 
@@ -94,16 +73,16 @@ debug.sethook()
 
 -- This is our main profile-outputter.
 local function print_data ()
-	io.write("\n")
+	io.write("\n\n") -- make room for the profiler message
 
 	-- An iterator to help abstract away a unique sorted traversal.
 	local pairs_by_values = require "modules.pairs_by_values"
 	
 	for count, func_group in pairs_by_values(Counters) do
 		for _, func in ipairs(func_group) do
-			local msg = derive_message(func)
+			local msg = derive_message(count, func)
 			if msg then
-				print(count, msg)
+				print(msg)
 			end
 		end	
 	end
