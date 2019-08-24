@@ -14,7 +14,17 @@ end
 
 test()
 
-debug_lex("fd_check_global")
+--debug_lex("fd_check_global")
+
+function test2 ()
+	for i = 1, 3 do
+		io.write("\n")
+		debug_lex()
+		--io.write("\n")
+	end
+end
+
+test2()
 
 --[[
 function cave ()
