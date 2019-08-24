@@ -9,6 +9,7 @@ of message format for everything - each entry will neatly align into
 columns.
 ]]
 
+local debug_lex = require "ex25-5"
 
 if not arg[1] then
 	print("Usage: lua ex25-6.lua file.lua <args for file.lua>")
@@ -36,7 +37,7 @@ local function derive_message (count, func)
 		
 	local base = string.format("%-15d%-20s%-15s%-5s", count, name_info.name, name_info.namewhat, 
 			name_info.what)
-	
+			
 	if name_info.what == "C" then
 		if (name_info.name == nil) or (name_info.namewhat == nil) then return end
 		return base
@@ -64,28 +65,31 @@ for i, a in ipairs(arg) do
 	end
 end
 		
-
 local f_main = assert(loadfile(arg[1], "t", env))
 debug.sethook(hook, "c")
 f_main()
 debug.sethook()
 
+-- Make sure f_main doesn't change the default input stream
+-- from io.stdin, in case we want to run debug stuff in this file.
+io.input(io.stdin) 
 
 -- This is our main profile-outputter.
 local function print_data ()
 	io.write("\n\n") -- make room for the profiler message
 
-	-- An iterator to help abstract away a unique sorted traversal.
+	-- An iterator to obtain members of Counters, but sorted by _value_,
+	-- i.e., their count.
 	local pairs_by_values = require "modules.pairs_by_values"
 	
 	for count, func_group in pairs_by_values(Counters) do
 		for _, func in ipairs(func_group) do
 			local msg = derive_message(count, func)
 			if msg then
-				print(msg)
+				io.write(msg, "\n")
 			end
 		end	
 	end
 end
 
-print_data()
+print_data() 
