@@ -18,13 +18,16 @@ function.)
 	NB: Only one hook can be active at a time; so each hook, when activated,
 has to "pass the baton" to the hook the programmer wants activated next.
 
-	tbc - still buggy, b/c setting a second breakpoint on the same function will
-overwrite the first breakpoint's hook.  tbc.
+	tbc - you can have three functions (possibly four):
+	
+	setbreakpoint
+	removebreakpoint
+	init - this will actually set the hook
+	close - no more breakpoints, until init is called again.
 ]]
 
-
-local handles = {}
 local func_record = {}
+
 
 local function setbreakpoint (fn, target_line)
 	local callh
@@ -38,7 +41,7 @@ local function setbreakpoint (fn, target_line)
 		local function lineh (_, line_no)
 			local idx_line = line_no - first_line
 			
-			--print(target_line, idx_line, idx_line == target_line)
+			print(target_line, idx_line, idx_line == target_line)
 			if idx_line == target_line then
 				print("Ouch!")
 			end
@@ -55,20 +58,19 @@ local function setbreakpoint (fn, target_line)
 		end
 	end
 	
-	local handle = {}
-	handles[handle] = fn
 	func_record[fn] = true
 	debug.sethook(callh, "c")
 	
 	return handle
 end
 
+--[[
 local function removebreakpoint (handle)
 	local fn = handles[handle]
 	handles[handle] = nil
 	func_record[fn] = nil
 end
-
+]]
 
 
 local function test1 ()
@@ -99,10 +101,11 @@ end
 
 
 local h1 = setbreakpoint(test2, 4)
-local h2 = setbreakpoint(test2, 1) -- I knew it - this overwrites the first one, tbc.
+--local h2 = setbreakpoint(test2, 2) 
+
 test1()
 test2()
 test3()
-removebreakpoint(h1)
+--removebreakpoint(h1)
 test2()
 
