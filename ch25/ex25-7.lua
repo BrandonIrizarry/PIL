@@ -15,47 +15,60 @@ execution and only turn on the line hook when the program is running the target
 function.)
 
 
-	Note that only one hook can be active at a time; so each hook, when activated,
-has to "pass the baton" to the hook the programmer wants activated next. In that sense, 
-hooks resemble return statements.
+	NB: Only one hook can be active at a time; so each hook, when activated,
+has to "pass the baton" to the hook the programmer wants activated next.
 
-tbc -- Link this with what 'setbreakpoint' is supposed to be; for example, you could
-be setting multiple breakpoints, and so e.g. do you need a table of all the breakpoints?
-So, removing a handle is removing that entry from the table, for that file you're executing.
-Also, will you be adding these lines directly into the file, or else load the file as a 
-chunk (being able to inspect the source code), and set breakpoints from the outside 
-(in the style of the previous exercise?) tbc.
+	tbc - still buggy, b/c setting a second breakpoint on the same function will
+overwrite the first breakpoint's hook.  tbc.
 ]]
 
-local callh
 
--- The call hook.
-callh = function (fn, tline)
-	local info = debug.getinfo(3, "Sfn")
-	local first_line, last_line = info.linedefined, info.lastlinedefined
-	
-	-- The line hook.
-	local function lineh (_, line_no)
-		local idx_line = line_no - first_line
+local handles = {}
+local func_record = {}
+
+local function setbreakpoint (fn, target_line)
+	local callh
+
+	callh = function ()
+		local info = debug.getinfo(2, "Sfn")
+		print(info.name, info.namewhat)
+		local first_line, last_line = info.linedefined, info.lastlinedefined
 		
-		print(tline, idx_line, idx_line == tline)
-		if idx_line == tline then
-			print("Ouch!")
+		-- The line hook.
+		local function lineh (_, line_no)
+			local idx_line = line_no - first_line
+			
+			--print(target_line, idx_line, idx_line == target_line)
+			if idx_line == target_line then
+				print("Ouch!")
+			end
+			
+			if line_no == last_line then
+				debug.sethook(callh, "c")
+			end
 		end
 		
-		if line_no == last_line then
-			debug.sethook(function () callh(fn, tline) end, "c")
+		if info.what == "Lua" then
+			if func_record[info.func] then 
+				debug.sethook(lineh, "l")
+			end
 		end
 	end
 	
-	if info.what == "Lua" then
-		--print(info.name, info.func == fn)
-		if info.func == fn then
-			debug.sethook(lineh, "l")
-		end
-	end
+	local handle = {}
+	handles[handle] = fn
+	func_record[fn] = true
+	debug.sethook(callh, "c")
+	
+	return handle
 end
-	
+
+local function removebreakpoint (handle)
+	local fn = handles[handle]
+	handles[handle] = nil
+	func_record[fn] = nil
+end
+
 
 
 local function test1 ()
@@ -84,11 +97,12 @@ local function test3 ()
 	local _ = nil
 end
 
-debug.sethook(function () callh(test2, 4) end, "c")
+
+local h1 = setbreakpoint(test2, 4)
+local h2 = setbreakpoint(test2, 1) -- I knew it - this overwrites the first one, tbc.
 test1()
 test2()
 test3()
+removebreakpoint(h1)
 test2()
-debug.sethook()
-
 
