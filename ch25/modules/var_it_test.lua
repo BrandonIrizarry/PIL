@@ -1,18 +1,15 @@
-local vt = require "var_it"
-
-local locals = vt.locals
-local upvalues = vt.upvalues
+local locals, upvalues = table.unpack(require "var_it")
 
 local function test ()
 	local x, y, z = 0, 1, 2
 	
 	print("Locals (regular function)")
-	for idx, name, value in locals(1) do
+	for idx, name, value in locals(nil, 1) do
 		print(idx, name, value)
 	end
 	
 	print("Upvalues (regular function)")
-	for idx, name, value in upvalues(1) do
+	for idx, name, value in upvalues(nil, 1) do
 		print(idx, name, value)
 	end
 end
@@ -34,25 +31,31 @@ co = coroutine.create(test_co)
 coroutine.resume(co)
 
 print("Locals (coroutine)")
-for idx, name, value in locals(co) do
+for idx, name, value in locals(co, 1) do
 	print(idx, name, value)
 end
 
 print("Upvalues (coroutine)")
-for idx, name, value in upvalues(co) do
+for idx, name, value in upvalues(co, 1) do
 	print(idx, name, value)
 end
 
+-- After this 'resume', we're in 'go_deeper'.
 coroutine.resume(co)
+
 print("More locals (coroutine)")
-for idx, name, value in locals(co) do
+for idx, name, value in locals(co, 1) do
 	print(idx, name, value)
 end
 
 print("More upvalues (coroutine)")
-for idx, name, value in upvalues(co) do
+for idx, name, value in upvalues(co, 1) do
 	print(idx, name, value)
 end
 
+print("See same locals as before (coroutine)")
+for idx, name, value in locals(co, 2) do
+	print(idx, name, value)
+end
 
 

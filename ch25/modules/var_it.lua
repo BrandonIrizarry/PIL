@@ -3,54 +3,67 @@
 	
 	Example usage:
 	
-	for idx, name, value in locals() do
+	-- This will print all surrounding locals visible at my level (regular function)
+	for idx, name, value in locals(nil, 1) do
 		print(idx, name, value)
 	end
 	
-	For a regular function, this will iterate over the locals/upvalues visible from
-the scope where it's called; for a coroutine, over the locals/upvalues visible
-from the scope where this last yielded.
+	-- This will print all locals visible at the level _above_ where the coroutine last yielded
+	for idx, name, value in locals(co, 2) do
+		print(idx, name, value)
+	end
+	
 	See the test file for a demonstration.
 ]]
 
-local M = {}
-
-function M.locals (arg)
-	return function (arg, idx)
+local function locals (co, level)
+	if not level then
+		error("Missing stack level", 2)
+	end
+	
+	return function (state, idx)
 		idx = idx + 1
 		local name, value
 		
-		if type(arg) == "thread" then
-			name, value = debug.getlocal(arg, 1, idx)
-		elseif math.type(arg) == "integer" then
-			name, value = debug.getlocal(arg + 1, idx)
+		local co = state.co
+		local level = state.level
+		
+		if co then
+			name, value = debug.getlocal(co, level, idx)
 		else
-			error("Invalid arg for 'locals' iterator", 2)
+			name, value = debug.getlocal(level + 1, idx)
 		end
-			
+		
 		if not name then return nil end
+		
 		return idx, name, value
-	end, arg, 0
+	end, {co=co, level=level}, 0
 end
 
-function M.upvalues (arg)
-	return function (arg, idx)
+local function upvalues (co, level)
+	if not level then
+		error("Missing stack level", 2)
+	end
+
+	return function (state, idx)
 		idx = idx + 1		
 		local func
 		
-		if type(arg) == "thread" then
-			func = debug.getinfo(arg, 1, "f").func
-		elseif math.type(arg) == "integer" then
-			func = debug.getinfo(arg + 1, "f").func
+		local co = state.co
+		local level = state.level
+		
+		if co then
+			func = debug.getinfo(co, level, "f").func
 		else
-			error("Invalid arg for 'upvalues' iterator", 2)
+			func = debug.getinfo(level + 1, "f").func
 		end
-
+		
 		local name, value = debug.getupvalue(func, idx)
+		
 		if not name then return nil end	
 		
 		return idx, name, value
-	end, arg, 0
+	end, {co=co, level=level}, 0
 end
 
-return M
+return {locals, upvalues}

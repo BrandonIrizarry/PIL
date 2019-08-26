@@ -10,7 +10,7 @@ do
 
 	local function foo (_ENV, a)
 		print("Test 'foo', a function with _ENV passed as its first parameter")
-		local vt = get_vt()
+		local vt = get_vt(nil, 1)
 		
 		for name, value in pairs(vt.locals) do
 			print(name, value)
@@ -27,12 +27,14 @@ local function test ()
 	print("\nTest a second, non-coroutine function.")
 	local x, y, z = 0, 1, 2
 	
-	local vt = get_vt()
+	local vt = get_vt(nil, 1)
 		
 	print("\nSee globals:")
 	for k,v in pairs(vt.globals) do
 		print(k,v)
 	end
+	print("But 'print' is a global here:")
+	print(vt.globals.print)
 	
 	print("\nSee locals:")
 	for n,v in pairs(vt.locals) do
@@ -66,7 +68,7 @@ local co = coroutine.create(travel)
 local status1, result1 = coroutine.resume(co)
  
 if status1 then
-	local vt_co = get_vt(co)
+	local vt_co = get_vt(co, 1)
 
 	print("\nTest coroutine's locals.")
 	for name, value in pairs(vt_co.locals) do

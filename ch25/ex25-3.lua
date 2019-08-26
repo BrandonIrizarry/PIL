@@ -7,47 +7,39 @@ not include environmental variables; instead, it should inherit them from the
 original environment.
 ]]
 
-local vt = require "modules.var_it"
-local locals = vt.locals
-local upvalues = vt.upvalues
+local locals, upvalues = table.unpack(require "modules.var_it")
 
-return function (arg)
-	arg = arg or 2
-	
-	if (type(arg) ~= "thread") and (math.type(arg) ~= "integer") then
-		error ("Invalid type for table-version of getvarvalue", 2)
+local env
+
+local function varvalue_table (co, level)
+	if co == nil then
+		level = level + 1
 	end
-	
-	
-	-- Use 'vt.env', instead.
-	-- local env -- for finding _ENV
 	
 	local vt = {}
 	vt.locals = {}
 	vt.upvalues = {}
-	
-	
-	for _, name, value in locals(arg) do
+		
+	for _, name, value in locals(co, level) do
 		vt.locals[name] = value
 		
-		if name == "_ENV" and not vt.env then
-			vt.env = value
+		if name == "_ENV" then
+			env = value
 		end
 	end
 	
-	for _, name, value in upvalues(arg) do
+	for _, name, value in upvalues(co, level) do
 		vt.upvalues[name] = value
 		
-		if (name == "_ENV") and not vt.env then
-			vt.env = value
+		if name == "_ENV" then
+			env = value
 		end
 	end
-	
-	-- In practice, _ENV is huge (all the standard Lua stuff),	
-	-- so this makes sense.
+		
 	vt.globals = setmetatable({}, {__index = function (_, varname)
-		-- Don't trigger "strict" errors; just return nil, as before.
-		local status, value = pcall(function () return vt.env[varname] end)
+	
+		-- Don't trigger "strict" errors; return nil instead.
+		local status, value = pcall(function () return env[varname] end)
 		if not status then return nil end
 		
 		return value
@@ -55,3 +47,5 @@ return function (arg)
 		
 	return vt
 end
+
+return varvalue_table

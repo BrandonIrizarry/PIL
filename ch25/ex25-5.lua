@@ -9,8 +9,17 @@ local get_vt = require "ex25-3" -- 'getvarvalue', but compiles a table
 local setvarvalue = require "ex25-2"
 
 --local locals, upvalues = require("modules.var_it").locals, require("modules.var_it").upvalues
-function debug_lex (chunk_name, co)
-	local vt = get_vt(co or 3)
+function debug_lex (chunk_name, arg)
+	local level, co
+
+	if math.type(arg) == "integer" then
+		level = arg + 1
+	elseif math.type(arg) == "thread" then
+		co = arg
+	end
+	
+	
+	local vt = get_vt(co or (level + 1))
 
 	-- The current scope doesn't necessarily have an _ENV variable, and so
 	-- 'print' may not be available, so include it manually, to facilitate
@@ -23,7 +32,7 @@ function debug_lex (chunk_name, co)
 		__newindex = function (_, word, value)
 			print("triggered __newindex")
 			-- NB: globals in vt are automatically handled, thanks to inheritance.
-			setvarvalue(word, value, 5) -- for "why 5?", see prev. exercise.
+			--setvarvalue(word, value, level + 6) -- technically, we need to fix for coroutines. 
 			
 			if vt.locals[word] then
 				vt.locals[word] = value

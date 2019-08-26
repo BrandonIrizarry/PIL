@@ -9,6 +9,9 @@ in an empty environment and use the __index metamethod attached to the function
 
 local get_vt = require "ex25-3" -- 'getvarvalue', but compiles a table
 
+-- Right now, this assumes that 'debug_lex' gets called at the exact same
+-- level as the variables we want to inspect, but this approach doesn't
+-- work when we want to include it in a debug hook.
 function debug_lex (chunk_name, co)
 	local vt = get_vt(co or 3)
 
