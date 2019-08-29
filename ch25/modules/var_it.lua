@@ -16,7 +16,7 @@
 	See the test file for a demonstration.
 ]]
 
-local function locals (co, level)
+local function locals (level, co)
 	if not level then
 		error("Missing stack level", 2)
 	end
@@ -40,7 +40,7 @@ local function locals (co, level)
 	end, {co=co, level=level}, 0
 end
 
-local function upvalues (co, level)
+local function upvalues (level, co)
 	if not level then
 		error("Missing stack level", 2)
 	end
@@ -62,7 +62,7 @@ local function upvalues (co, level)
 		
 		if not name then return nil end	
 		
-		return idx, name, value
+		return idx, name, value, func
 	end, {co=co, level=level}, 0
 end
 

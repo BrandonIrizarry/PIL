@@ -15,18 +15,20 @@ local function getvarvalue (varname, level, co)
 	
 	local foundtype, foundvalue
 	
-	for _, name, value in locals(co, level) do
+	for _, name, value in locals(level, co) do
 		if name == varname then
 			foundtype, foundvalue = "local", value
+		end
 			
 		if name == "_ENV" then
 			env = value
 		end
 	end
 	
-	for _, name, value in upvalues(co, level) do
+	for _, name, value in upvalues(level, co) do
 		if name == varname then
 			foundtype, foundvalue = "upvalue", value
+		end
 			
 		if name == "_ENV" then
 			env = value
