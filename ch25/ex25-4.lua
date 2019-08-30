@@ -12,13 +12,20 @@ local get_vt = require "ex25-3" -- 'getvarvalue', but compiles a table
 -- Right now, this assumes that 'debug_lex' gets called at the exact same
 -- level as the variables we want to inspect, but this approach doesn't
 -- work when we want to include it in a debug hook.
-function debug_lex (chunk_name, co)
-	local vt = get_vt(co or 3)
+function debug_lex (chunk_name, level, co)
+	level = level or 1
+	
+	if co == nil then
+		level = level + 1
+	end
+	
+	local vt = get_vt(level, co)
 
 	-- The current scope doesn't necessarily have an _ENV variable, and so
-	-- 'print' may not be available, so include it manually, to facilitate
-	-- inspection.
-	local env = setmetatable({print=print}, {__index = function (_, word)
+	-- 'print', 'pairs', 'ipairs' etc. may not be available, so include _G 
+	-- in the chunk's environment to access these things, for inspecting
+	-- variables and such.
+	local env = setmetatable({_G=_G}, {__index = function (_, word)
 		return vt.locals[word] or vt.upvalues[word] or vt.globals[word] 		
 	end})
 		
@@ -46,17 +53,9 @@ function debug_lex (chunk_name, co)
 				
 				io.write("\n")
 				goto continue
-			elseif command == "env" then
-				if vt.env then
-					for k,v in pairs(vt.env) do
-						print(k,v)
-					end
-					
-					io.write("\n")
-				end
-				goto continue
 			else
-				error("Invalid metacommand to debug REPL", 2)
+				print("Invalid metacommand to debug REPL")
+				goto continue
 			end
 		end
 	
@@ -72,7 +71,7 @@ function debug_lex (chunk_name, co)
 		elseif prefix ~= "" then
 			print(err_msg) 
 		else
-			prefix = "print("
+			prefix = "_G.print("
 			suffix = ")"
 			goto try_again
 		end

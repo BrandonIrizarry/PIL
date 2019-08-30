@@ -32,16 +32,16 @@ local function setvarvalue (varname, varvalue, level, co)
 	for idx, name, value, func in upvalues(LEVEL, co) do
 		if name == varname then
 			debug.setupvalue(func, idx, varvalue)
+			found = true
 		end
 		
 		if name == "_ENV" then
 			env = value
 		end
 		
-		found = true
 	end
 	
-	if not found then
+	if found == nil then
 		env[varname] = varvalue
 	end
 end

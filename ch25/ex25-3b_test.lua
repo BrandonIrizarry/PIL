@@ -1,7 +1,39 @@
-local get_vt = require "ex25-3"
+local get_vt = require "ex25-3b"
 
 -- This has to be in its own scope, or else references to 'pairs' and 'print' 
 -- later on in this test-suite bafflingly don't trigger a reference to an _ENV table.
+
+local function test_instance (name, expected, level, co)	
+	level = level or 1
+	
+	if co == nil then
+		level = level + 1
+	end
+	
+	local vt = get_vt(level, co)
+	
+	local actual = vt[name]
+	
+	local status = (actual == expected) and "equal" or "not equal"
+	print("actual:", actual, "expected:", expected, "status:", status)
+	assert(status == "equal")
+end
+
+local function see (level, co)
+	level = level or 1
+	
+	if co == nil then
+		level = level + 1
+	end
+	
+	local vt = get_vt(level, co)
+	
+	io.write("\n\n")
+	for k,v in pairs(vt) do
+		print(k,v)
+	end
+end
+
 do
 	local print = print
 	local pairs = pairs
@@ -9,14 +41,10 @@ do
 	local get_vt = get_vt
 
 	local function foo (_ENV, a)
-		print("Test 'foo', a function with _ENV passed as its first parameter")
-		local vt = get_vt(1)
+		print "Test 'foo', a function with _ENV passed as its first parameter"
+		test_instance("b", 14)
 		
-		for name, value in pairs(vt.locals) do
-			print(name, value)
-		end
-		
-		print("This was included with local _ENV as a free reference:", vt.globals.b)
+		see()
 	end
 
 
@@ -26,27 +54,12 @@ end
 local function test ()
 	print("\nTest a second, non-coroutine function.")
 	local x, y, z = 0, 1, 2
-	
-	local vt = get_vt(1)
 		
-	print("\nSee globals:")
-	for k,v in pairs(vt.globals) do
-		print(k,v)
-	end
-	print("But 'print' is a global here:")
-	print(vt.globals.print)
+	print "\nDo we have 'print'? (non-coroutine)"
+	test_instance("print", print)
 	
-	print("\nSee locals:")
-	for n,v in pairs(vt.locals) do
-		print(n,v)
-	end
-
-	print("\nSee upvalues:")
-	for n,v in pairs(vt.upvalues) do
-		print(n,v)
-	end
-	
-	print("\n'pairs' is visible here:", vt.globals.pairs)
+	print "\nDo we have 'pairs'? (non-coroutine)"
+	test_instance("pairs", pairs)
 end
 
 test()
@@ -71,14 +84,16 @@ if status1 then
 	local vt_co = get_vt(1, co)
 
 	print("\nTest coroutine's locals.")
-	for name, value in pairs(vt_co.locals) do
+	for name, value in pairs(vt_co) do
 		print(name, value)
 	end
 
+	--[[
 	print("\nTest coroutine's upvalues.")
 	for name, value in pairs(vt_co.upvalues) do
 		print(name, value)
 	end
+	--]]
 else
 	print(result1) -- hopefully, an error message
 end

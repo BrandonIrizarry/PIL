@@ -17,32 +17,29 @@ local function varvalue_table (level, co)
 	end
 	
 	local vt = {}
-	vt.locals = {}
-	vt.upvalues = {}
-		
-	for _, name, value in locals(level, co) do
-		vt.locals[name] = value
+	
+	for _, name, value in upvalues(level, co) do
+		vt[name] = value
 		
 		if name == "_ENV" then
 			env = value
 		end
 	end
 	
-	for _, name, value in upvalues(level, co) do
-		vt.upvalues[name] = value
+	for _, name, value in locals(level, co) do
+		vt[name] = value
 		
 		if name == "_ENV" then
 			env = value
 		end
 	end
+	
 		
-	vt.globals = env and setmetatable({}, {
+	return setmetatable(vt, {
 		__index = function (_, varname)
-			return env[varname]
+			return env and env[varname] or nil
 		end
-	}) or {}
-		
-	return vt
+	})
 end
 
 return varvalue_table

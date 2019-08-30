@@ -8,7 +8,7 @@ function test_instance(varname, varvalue, level, co)
 	
 	setvarvalue(varname, varvalue, level, co)
 	local _type, _value = getvarvalue(varname, level, co)
-	print(_value, _varvalue)
+	print(_type, _value, varvalue)
 	assert(_value == varvalue)
 end
 

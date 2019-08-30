@@ -6,24 +6,18 @@
 
 local get_vt = require "ex25-3" -- 'getvarvalue', but compiles a table
 --local getvarvalue = require "ex25-1"
-local setvarvalue = require "ex25-2"
+local setvarvalue = require "ex25-2b"
 
 --local locals, upvalues = require("modules.var_it").locals, require("modules.var_it").upvalues
-function debug_lex (chunk_name, arg)
-	local level, co
-
-	if math.type(arg) == "integer" then
-		level = arg + 1
-	elseif math.type(arg) == "thread" then
-		co = arg
+function debug_lex (chunk_name, level, co)
+	level = level or 1
+	
+	if co == nil then
+		level = level + 1
 	end
 	
-	
-	local vt = get_vt(co or (level + 1))
+	local vt = get_vt(level, co)
 
-	-- The current scope doesn't necessarily have an _ENV variable, and so
-	-- 'print' may not be available, so include it manually, to facilitate
-	-- inspection.
 	local read_write = {
 		__index = function (_, word)
 			return vt.locals[word] or vt.upvalues[word] or vt.globals[word]
@@ -33,6 +27,7 @@ function debug_lex (chunk_name, arg)
 			print("triggered __newindex")
 			-- NB: globals in vt are automatically handled, thanks to inheritance.
 			--setvarvalue(word, value, level + 6) -- technically, we need to fix for coroutines. 
+			setvarvalue(word, value, level + 2)
 			
 			if vt.locals[word] then
 				vt.locals[word] = value
@@ -44,7 +39,7 @@ function debug_lex (chunk_name, arg)
 		end,
 	}
 	
-	local env = setmetatable({print=print}, read_write)
+	local env = setmetatable({_G=_G}, read_write)
 	chunk_name = chunk_name or "debug_lex"
 		
 	while true do
@@ -68,17 +63,9 @@ function debug_lex (chunk_name, arg)
 				
 				io.write("\n")
 				goto continue
-			elseif command == "env" then
-				if vt.env then
-					for k,v in pairs(vt.env) do
-						print(k,v)
-					end
-					
-					io.write("\n")
-				end
-				goto continue
 			else
-				error("Invalid metacommand to debug REPL", 2)
+				print("Invalid metacommand to debug REPL")
+				goto continue
 			end
 		end
 		
@@ -94,7 +81,7 @@ function debug_lex (chunk_name, arg)
 		elseif prefix ~= "" then
 			print(err_msg) 
 		else
-			prefix = "print("
+			prefix = "_G.print("
 			suffix = ")"
 			goto try_again
 		end
