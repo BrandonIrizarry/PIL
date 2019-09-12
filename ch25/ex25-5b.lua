@@ -7,7 +7,16 @@
 local get_vt = require "ex25-3b" -- 'getvarvalue', but compiles a table
 local setvarvalue = require "ex25-2b"
 
-function debug_lex (chunk_name, level, co)
+
+function debug_lex (chunk_name, level, co, use_dl)
+	local dl 
+	
+	if use_dl then
+		dl = require "ex25-4b" -- use original debug_lex, to help out here!
+	else
+		dl = function (...) end
+	end
+	
 	level = level or 1
 	
 	if co == nil then
@@ -17,23 +26,20 @@ function debug_lex (chunk_name, level, co)
 	local vt = get_vt(level, co)
 
 	local read_write = {
-		__index = function (_, word)
-			return vt.locals[word] or vt.upvalues[word] or vt.globals[word]
+		__index = function (_, name)
+			return vt[name]
 		end,
 		
-		__newindex = function (_, word, value)
+		__newindex = function (_, name, value)
 			print("triggered __newindex")
-			-- NB: globals in vt are automatically handled, thanks to inheritance.
-			--setvarvalue(word, value, level + 6) -- technically, we need to fix for coroutines. 
-			setvarvalue(word, value, level + 2)
 			
-			if vt.locals[word] then
-				vt.locals[word] = value
-			elseif vt.upvalues[word] then
-				vt.upvalues[word] = value
-			else
-				error("Assignment to nonexistent variable", 2)
-			end
+			-- Possibly run a diagnostic, in case things aren't setting, etc.
+			local active = co and level or level + 3 -- I don't like this too much, but ok.
+			dl("meta", active, co)
+			
+			setvarvalue(name, value, active, co)
+			
+			vt[name] = value
 		end,
 	}
 	
@@ -50,12 +56,7 @@ function debug_lex (chunk_name, level, co)
 			if command == "cont" then
 				break
 			elseif command == "see" then
-				print("\nlocals:")
-				for name, value in pairs(vt.locals) do
-					print(name, value)
-				end
-				print("\nupvalues:")
-				for name, value in pairs(vt.upvalues) do
+				for name, value in pairs(vt) do
 					print(name, value)
 				end
 				

@@ -21,7 +21,7 @@ has to "pass the baton" to the hook the programmer wants activated next.
 
 --[[ The 'H' table indexes unique table-keys (see PIL 4, p. 193) to our
 registered "target" functions; such keys are the breakpoint handles. The
-'F' table allows the call hook to know that the program is running a target function.
+'F' table allows the call hook to know that the program is running a given target function.
 Furthermore, each key in 'F' (that is, each registered function) points to a table
 that allows the line hook to know which lines need breakpoints. ]]
 local F = {}
@@ -30,17 +30,16 @@ local H = {}
 local M = {} -- the module.
 
 -- For kicks, let's use the one we designed for Exercise 25-5.
-local debug_lex = require "ex25-5"
+local debug_lex = require "ex25-5b"
 
 --[[ Register the function and line number for the hook to pick up. 
 Then create, register, and return the handle.
 	Also, give the breakpoint an optional name, to know which 
-breakpoint we're looking at! ]]
+breakpoint we're looking at when inside 'debug_lex'. ]]
 function M.setbreakpoint (fn, line, name)
 	F[fn] = F[fn] or {}
 	
-	-- Instead of 'true', set existence is via a string (truthy), which
-	-- we'll use as the breakpoint's name.
+	-- Instead of 'true', set existence via a string (the breakpoint's name).
 	F[fn][line] = assert(type(name) == "string") and name or "breakpoint"
 	
 	local hdl = {}
@@ -52,6 +51,10 @@ end
 --[[ Grab the registered function, delete it from the hook's search 
 space, and then unregister the given handle. ]]
 function M.removebreakpoint (hdl)
+	if not hdl then
+		error("removing a nonexistent handle", 2)
+	end
+	
 	local fn = H[hdl]
 	F[fn] = nil
 	H[hdl] = nil
@@ -71,7 +74,8 @@ function M.init ()
 			local name = F[fn][line - line_0]
 			
 			if name then
-				print(debug.getlocal(2, 1))
+				--print(debug.getlocal(2, 1))
+				--debug_lex(name, 2, nil, true)
 				debug_lex(name, 2)
 			end
 			

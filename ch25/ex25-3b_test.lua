@@ -77,25 +77,11 @@ end
 
 local co = coroutine.create(travel)
 
--- Now we really have to watch out for this, b/c of "strict.lua"!
 local status1, result1 = coroutine.resume(co)
  
 if status1 then
-	local vt_co = get_vt(1, co)
-
-	print("\nTest coroutine's locals.")
-	for name, value in pairs(vt_co) do
-		print(name, value)
-	end
-
-	--[[
-	print("\nTest coroutine's upvalues.")
-	for name, value in pairs(vt_co.upvalues) do
-		print(name, value)
-	end
-	--]]
+	test_instance("h", "baytown", 1, co)
+	test_instance("x", 0, 2, co)
 else
-	print(result1) -- hopefully, an error message
+	print(result1)
 end
-
-

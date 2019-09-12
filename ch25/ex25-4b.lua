@@ -1,11 +1,13 @@
 --[[
-	Exercise 25.5
+	Exercise 25.4
 	
-	Improve the previous exercise to handle updates, too.
+	Write an improved version of debug.debug that runs the given commands as
+if they were in the lexical scope of the calling function. (Hint: run the commands
+in an empty environment and use the __index metamethod attached to the function
+'getvarvalue' to do accesses to variables.
 ]]
 
-local get_vt = require "ex25-3b" -- 'getvarvalue', but compiles a table
-local setvarvalue = require "ex25-2b"
+local get_vt = require "ex25-3b" -- like 'getvarvalue', but compiles a table
 
 function debug_lex (chunk_name, level, co)
 	level = level or 1
@@ -16,33 +18,21 @@ function debug_lex (chunk_name, level, co)
 	
 	local vt = get_vt(level, co)
 
-	local read_write = {
-		__index = function (_, word)
-			return vt.locals[word] or vt.upvalues[word] or vt.globals[word]
-		end,
+	-- The current scope doesn't necessarily have an _ENV variable, and so
+	-- 'print', 'pairs', 'ipairs' etc. may not be available, so include _G 
+	-- in the chunk's environment to access these things, for inspecting
+	-- variables and such.
+	local env = setmetatable({_G=_G}, {__index = function (_, word)
+		--return vt.locals[word] or vt.upvalues[word] or vt.globals[word] 		
+		return vt[word]
+	end})
 		
-		__newindex = function (_, word, value)
-			print("triggered __newindex")
-			-- NB: globals in vt are automatically handled, thanks to inheritance.
-			--setvarvalue(word, value, level + 6) -- technically, we need to fix for coroutines. 
-			setvarvalue(word, value, level + 2)
-			
-			if vt.locals[word] then
-				vt.locals[word] = value
-			elseif vt.upvalues[word] then
-				vt.upvalues[word] = value
-			else
-				error("Assignment to nonexistent variable", 2)
-			end
-		end,
-	}
-	
-	local env = setmetatable({_G=_G}, read_write)
 	chunk_name = chunk_name or "debug_lex"
-		
+	
 	while true do
 		io.write(string.format("debug:%s> ", chunk_name))
 		local line = io.read()
+	
 		if line == nil then break end
 		
 		local asterisk, command = line:match("(*?)(.*)")
@@ -50,12 +40,8 @@ function debug_lex (chunk_name, level, co)
 			if command == "cont" then
 				break
 			elseif command == "see" then
-				print("\nlocals:")
-				for name, value in pairs(vt.locals) do
-					print(name, value)
-				end
-				print("\nupvalues:")
-				for name, value in pairs(vt.upvalues) do
+				print()
+				for name, value in pairs(vt) do
 					print(name, value)
 				end
 				
@@ -66,7 +52,7 @@ function debug_lex (chunk_name, level, co)
 				goto continue
 			end
 		end
-		
+	
 		-- Allow for certain invalid chunks, for quick variable inspection.
 		-- Check for both compile- and runtime errors.
 		local prefix, suffix = "", ""

@@ -9,7 +9,7 @@ of message format for everything - each entry will neatly align into
 columns.
 ]]
 
-local debug_lex = require "ex25-5"
+local debug_lex = require "ex25-5b"
 
 if not arg[1] then
 	print("Usage: lua ex25-6.lua file.lua <args for file.lua>")

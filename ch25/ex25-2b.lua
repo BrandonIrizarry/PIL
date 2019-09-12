@@ -9,16 +9,20 @@ local locals, upvalues = table.unpack(require "modules.var_it")
 local env
 
 local function setvarvalue (varname, varvalue, level, co)
-	local LEVEL = (co and level) or level + 1
+	if co == nil then
+		level = level + 1
+	end
+	
+	--local LEVEL = (co and level) or level + 1
 	
 	local found
 	
-	for idx, name, value in locals(LEVEL, co) do
+	for idx, name, value in locals(level, co) do
 		if name == varname then
 			if co then
-				debug.setlocal(co, LEVEL, idx, varvalue)
+				debug.setlocal(co, level, idx, varvalue)
 			else
-				debug.setlocal(LEVEL, idx, varvalue)
+				debug.setlocal(level, idx, varvalue)
 			end
 			
 			found = true
@@ -29,7 +33,7 @@ local function setvarvalue (varname, varvalue, level, co)
 		end
 	end
 	
-	for idx, name, value, func in upvalues(LEVEL, co) do
+	for idx, name, value, func in upvalues(level, co) do
 		if name == varname then
 			debug.setupvalue(func, idx, varvalue)
 			found = true

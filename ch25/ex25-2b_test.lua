@@ -23,3 +23,36 @@ function test ()
 end
 
 test()
+
+function cave ()
+	local inside = "inside the cave"
+	coroutine.yield()
+end
+
+function spelunker ()
+	local top = "just outside the cave"
+	coroutine.yield()
+	cave()
+end
+
+
+local co = coroutine.create(spelunker)
+
+local status1, result1 = coroutine.resume(co)
+
+if status1 then
+	test_instance("top", "foo", 1, co)
+	test_instance("top", "bar", 1, co)
+else
+	print(result1)
+end
+
+local s2, r2 = coroutine.resume(co)
+
+if s2 then
+	test_instance("top", "baz", 2, co)
+	test_instance("top", "afuera", 2, co)
+	test_instance("inside", "adentro", 1, co)
+else
+	print(r2)
+end
