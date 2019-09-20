@@ -4,14 +4,19 @@
 	Implement and run the code presented in this chapter.
 ]]
 
+-- NB: Pass in an argument of "true" to see the files come one by one more slowly,
+-- rather than in one swoop :)
+local serial = arg[1] or false
+
 local download = require "modules.download"
+local socket = require "socket"
 
 local tasks = {} -- list of all live tasks
 
 local function get (host, file)
 	-- create a coroutine for the task
 	local co = coroutine.wrap(function ()
-		download(host, file)
+		download(host, file, serial)
 	end)
 	
 	-- insert it into the list

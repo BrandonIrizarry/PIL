@@ -17,10 +17,11 @@ local function receive2 (connection)
 end
 
 
-local function download (host, file, parallel)
+local function download (host, file, serial)
 	local contents = [[
 GET %s HTTP/1.0
 host: %s
+
 ]]
 
 	local connection = assert(socket.connect(host, 80))
@@ -29,7 +30,7 @@ host: %s
 
 	connection:send(request)
 	
-	local receive = parallel and receive2 or receive1
+	local receive = serial and receive1 or receive2
 	
 	repeat
 		local str, status = receive(connection)
